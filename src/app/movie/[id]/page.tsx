@@ -18,7 +18,8 @@ type PageProps = {
 };
 
 export default async function MovieDetailsPage({ params }: PageProps) {
-	const movieId = Number(params.id);
+	const { id } = await params;
+	const movieId = Number(id);
 
 	if (!movieId || Number.isNaN(movieId)) {
 		notFound();

@@ -18,7 +18,8 @@ type PageProps = {
 };
 
 export default async function TvShowDetailsPage({ params }: PageProps) {
-	const tvId = Number(params.id);
+	const { id } = await params;
+	const tvId = Number(id);
 
 	if (!tvId || Number.isNaN(tvId)) {
 		notFound();
