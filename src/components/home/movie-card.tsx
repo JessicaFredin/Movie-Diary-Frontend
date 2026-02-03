@@ -369,8 +369,6 @@
 // 							// 	variant="card"
 // 							// />
 
-			
-
 // 							<AddToDiaryButton
 // 								variant="card"
 // 								isAdded={alreadyAdded}
@@ -418,14 +416,9 @@
 // 	);
 // }
 
-
-
-
-
 "use client";
 
 import Image from "next/image";
-import { Icon } from "@iconify/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getPosterUrl } from "@/utils/tmdb-image";

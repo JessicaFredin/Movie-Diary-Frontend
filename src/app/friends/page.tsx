@@ -10,7 +10,6 @@ import {
 	Trash2,
 	X,
 	Send,
-	Search,
 } from "lucide-react";
 
 /* ---------------- TYPES ---------------- */

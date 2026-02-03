@@ -8,7 +8,7 @@ import {
 } from "@/services/tmdb-services";
 import { getPosterUrl } from "@/utils/tmdb-image";
 import ExpandableText from "@/components/details/expandable-text";
-import { ChevronRight, Plus, Clock, Star } from "lucide-react";
+import { ChevronRight, Clock, Star } from "lucide-react";
 import MovieDiaryActions from "@/components/details/movie-diary-actions";
 
 type PageProps = {
