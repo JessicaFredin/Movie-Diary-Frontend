@@ -11,6 +11,7 @@ export default function MovieGrid({ items }: { items: DiaryEntry[] }) {
 					id={entry.id}
 					title={entry.title}
 					posterPath={entry.poster}
+					backdropPath={entry.backdrop ?? entry.poster}
 					type={entry.type}
 					lastLogged={entry.updatedAt}
 					status={entry.status}
