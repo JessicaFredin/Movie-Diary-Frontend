@@ -157,7 +157,7 @@ export default function Hero({
 			<div className="block md:hidden absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-black/80 via-black/30 to-transparent z-10" />
 
 			{/* ===== TEXT CONTENT ===== */}
-			<div className="absolute z-20 w-full md:w-[32%] px-4 md:px-6 text-white flex flex-col justify-center h-full items-center md:items-start text-center md:text-left overflow-hidden">
+			<div className="absolute z-20 w-full md:w-[32%] px-4 md:px-12 text-white flex flex-col justify-center h-full items-center md:items-start text-center md:text-left overflow-hidden">
 				{/* Rating + Title + Year */}
 				<div className="flex items-center gap-2 md:gap-4 mb-2 flex-nowrap overflow-hidden max-w-full">
 					{typeof rating === "number" && (

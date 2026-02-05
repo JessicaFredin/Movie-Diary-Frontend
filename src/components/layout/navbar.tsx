@@ -32,8 +32,8 @@ export default function Navbar() {
 	});
 
 	return (
-		<nav className="bg-gray-900 text-white px-6 py-4 shadow-md">
-			<div className="max-w-6xl mx-auto flex items-center justify-between">
+		<nav className="bg-gray-900 text-white py-4 shadow-md">
+			<div className=" flex items-center justify-between px-6 lg:px-12">
 				{/* Logo */}
 				<Link href="/">
 					<Image
@@ -89,7 +89,9 @@ export default function Navbar() {
 											}
 											className="block px-4 py-2 hover:bg-gray-700"
 										>
-											{item.icon && <item.icon className="w-4 h-4 inline mr-2" />}
+											{item.icon && (
+												<item.icon className="w-4 h-4 inline mr-2" />
+											)}
 											{item.label}
 										</Link>
 									))}
