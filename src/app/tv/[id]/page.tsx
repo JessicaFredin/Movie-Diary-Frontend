@@ -43,7 +43,7 @@ export default async function TvShowDetailsPage({ params }: PageProps) {
 		: "—";
 
 	return (
-		<main className="bg-black text-white">
+		<main className="">
 			{/* ===== HERO / POSTER ===== */}
 			<div className="relative md:static">
 				{/* Mobile banner */}

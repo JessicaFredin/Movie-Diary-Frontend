@@ -8,6 +8,7 @@ export interface TvShow {
 	poster_path: string | null;
 	backdrop_path: string | null;
 	vote_average: number;
+	vote_count: number;
 	first_air_date: string;
 	overview: string;
 	number_of_seasons: number;

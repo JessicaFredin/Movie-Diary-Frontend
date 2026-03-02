@@ -7,9 +7,12 @@ export interface Movie {
 	poster_path: string | null;
 	backdrop_path: string | null;
 	vote_average: number;
+	vote_count: number;
 	release_date: string;
 	overview: string;
 	runtime: number;
 	genres?: Genre[];
 	genre_ids?: number[];
 }
+
+
