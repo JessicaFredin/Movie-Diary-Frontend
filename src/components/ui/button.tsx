@@ -18,12 +18,12 @@ export default function Button({
 
 	const styles =
 		variant === "primary"
-			? "bg-[#FF414E] text-white hover:bg-[#e63946]" 
+			? "bg-accent text-white hover:bg-accent-hover" 
 			: variant === "google"
-			? "border border-gray-600 bg-[#070707] text-white hover:bg-gray-800"
+			? "border border-gray-600 bg-transparent text-white hover:bg-surface-elevated"
 			: variant === "facebook"
-			? "border border-gray-600 bg-[#070707] text-white hover:bg-gray-800"
-			: "bg-gray-200 text-black hover:bg-gray-300";
+			? "border border-gray-600 bg-transparent text-white hover:bg-surface-elevated"
+			: "bg-muted text-black hover:bg-muted";
 
 	return (
 		<button type={type} onClick={onClick} className={`${base} ${styles}`}>

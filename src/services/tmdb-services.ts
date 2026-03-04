@@ -159,6 +159,25 @@ export async function fetchTvShowWatchProviders(
 	return country.flatrate ?? country.rent ?? country.buy ?? [];
 }
 
+export async function fetchAllStreamingProviders(): Promise<WatchProvider[]> {
+	const movieData = await handleTmdbRequest<{ results: WatchProvider[] }>(
+		tmdb.get("/watch/providers/movie"),
+	);
+
+	const tvData = await handleTmdbRequest<{ results: WatchProvider[] }>(
+		tmdb.get("/watch/providers/tv"),
+	);
+
+	// Merge + remove duplicates
+	const map = new Map<number, WatchProvider>();
+
+	[...movieData.results, ...tvData.results].forEach((provider) => {
+		map.set(provider.provider_id, provider);
+	});
+
+	return Array.from(map.values());
+}
+
 
 export function searchTmdb(query: string, page = 1) {
 	return handleTmdbRequest<TMDBListResponse<Movie | TvShow>>(

@@ -27,7 +27,7 @@ export default function TvProgressPicker({
 					onSeasonChange(Number(e.target.value));
 					onEpisodeChange(1); // reset episode on season change
 				}}
-				className="flex-1 rounded-lg bg-gray-900 px-3 py-2 text-sm"
+				className="flex-1 rounded-lg bg-surface-dark px-3 py-2 text-sm"
 			>
 				{seasons.map((s) => (
 					<option key={s.season_number} value={s.season_number}>
@@ -40,7 +40,7 @@ export default function TvProgressPicker({
 			<select
 				value={episode}
 				onChange={(e) => onEpisodeChange(Number(e.target.value))}
-				className="flex-1 rounded-lg bg-gray-900 px-3 py-2 text-sm"
+				className="flex-1 rounded-lg bg-surface-dark px-3 py-2 text-sm"
 			>
 				{Array.from(
 					{ length: currentSeason?.episode_count ?? 0 },

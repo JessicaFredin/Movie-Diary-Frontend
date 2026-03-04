@@ -97,7 +97,7 @@ export default function AddToDiaryModal({ open, onClose, content }: Props) {
 						<h2 className="text-lg font-semibold">
 							{content.title}
 						</h2>
-						<p className="text-sm text-gray-400 capitalize">
+						<p className="text-sm text-muted capitalize">
 							{content.type}
 						</p>
 					</div>
@@ -130,14 +130,14 @@ export default function AddToDiaryModal({ open, onClose, content }: Props) {
 				<div className="mt-6 flex gap-3">
 					<button
 						onClick={onClose}
-						className="flex-1 rounded-full bg-gray-800 py-2 text-sm"
+						className="flex-1 rounded-full bg-surface-elevated py-2 text-sm"
 					>
 						Cancel
 					</button>
 
 					<button
 						onClick={handleSave}
-						className="flex-1 rounded-full bg-[#FF414E] py-2 text-sm font-semibold"
+						className="flex-1 rounded-full bg-accent py-2 text-sm font-semibold"
 					>
 						Save to diary
 					</button>

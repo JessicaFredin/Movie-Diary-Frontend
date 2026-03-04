@@ -513,7 +513,7 @@ export default function MovieCard({
 				{isHome && (
 					<div className="flex justify-between items-start">
 						{typeof rating === "number" && (
-							<span className="text-yellow-400 text-xs font-medium bg-black/60 px-2 py-0.5 rounded-md">
+							<span className="text-warning text-xs font-medium bg-black/60 px-2 py-0.5 rounded-md">
 								★ {rating.toFixed(1)}
 							</span>
 						)}
@@ -542,19 +542,19 @@ export default function MovieCard({
 					<h3 className="text-white font-semibold text-sm md:text-base truncate">
 						{title}
 					</h3>
-					<p className="text-xs text-gray-300">
+					<p className="text-xs text-muted">
 						{type === "movie" ? "Movie" : "TV Show"}
 					</p>
 
 					{isLogged && type === "tv" && progress && (
-						<span className="mt-1 inline-block text-xs font-medium text-white bg-red-500/80 px-2 py-0.5 rounded-md w-fit">
+						<span className="mt-1 inline-block text-xs font-medium text-white bg-accent/80 px-2 py-0.5 rounded-md w-fit">
 							S{progress.currentSeason} • E
 							{progress.currentEpisode}
 						</span>
 					)}
 
 					{isLogged && lastLogged && (
-						<p className="text-[11px] text-gray-400">
+						<p className="text-[11px] text-muted">
 							Last logged: {formatDate(lastLogged)}
 						</p>
 					)}

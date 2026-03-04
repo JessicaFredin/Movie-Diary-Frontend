@@ -32,7 +32,7 @@ export default function Navbar() {
 	});
 
 	return (
-		<nav className="bg-gray-900 text-white py-4 shadow-md">
+		<nav className="bg-surface-dark text-white py-4 shadow-md">
 			<div className=" flex items-center justify-between px-6 lg:px-12">
 				{/* Logo */}
 				<Link href="/">
@@ -53,8 +53,8 @@ export default function Navbar() {
 								href={item.href}
 								className={`${
 									pathname === item.href
-										? "text-red-400"
-										: "text-gray-300"
+										? "text-accent"
+										: "text-muted"
 								} hover:text-white transition`}
 							>
 								{item.name}
@@ -67,7 +67,7 @@ export default function Navbar() {
 						<li className="relative">
 							<button
 								onClick={() => setProfileOpen((v) => !v)}
-								className="w-9 h-9 rounded-full overflow-hidden cursor-pointer focus:outline-none border border-[#FF414E]"
+								className="w-9 h-9 rounded-full overflow-hidden cursor-pointer focus:outline-none border border-accent"
 							>
 								<Image
 									src={user.avatar ?? "/images/avatar.jpg"}
@@ -79,7 +79,7 @@ export default function Navbar() {
 							</button>
 
 							{profileOpen && (
-								<div className="absolute right-0 mt-2 w-48 rounded-lg bg-gray-800 shadow-lg z-50">
+								<div className="absolute right-0 mt-2 w-48 rounded-lg bg-surface-elevated shadow-lg z-50">
 									{profileNavItems.map((item) => (
 										<Link
 											key={item.href}
@@ -87,7 +87,7 @@ export default function Navbar() {
 											onClick={() =>
 												setProfileOpen(false)
 											}
-											className="block px-4 py-2 hover:bg-gray-700"
+											className="block px-4 py-2 hover:bg-surface-neutral"
 										>
 											{item.icon && (
 												<item.icon className="w-4 h-4 inline mr-2" />
@@ -101,7 +101,7 @@ export default function Navbar() {
 											logout();
 											setProfileOpen(false);
 										}}
-										className="w-full text-left px-4 py-2 hover:bg-gray-700"
+										className="w-full text-left px-4 py-2 hover:bg-surface-neutral"
 									>
 										<LogOut className="w-4 h-4 inline mr-2" />
 										Log out
@@ -129,7 +129,7 @@ export default function Navbar() {
 							key={item.href}
 							href={item.href}
 							onClick={() => setOpen(false)}
-							className="block text-gray-300 hover:text-white"
+							className="block text-muted hover:text-white"
 						>
 							{item.name}
 						</Link>

@@ -8,7 +8,7 @@ export default function LoadMoreButton({ onClick, disabled }: Props) {
 		<button
 			onClick={onClick}
 			disabled={disabled}
-			className="text-sm text-white hover:text-[#FF414E] disabled:text-gray-500"
+			className="text-sm text-white hover:text-accent disabled:text-muted-2"
 		>
 			Load More ......
 		</button>

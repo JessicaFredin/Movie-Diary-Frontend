@@ -3,12 +3,12 @@ import { FaInstagram, FaFacebookF, FaTwitter } from "react-icons/fa";
 export default function Footer() {
 	return (
 		<footer className="bg-[#070707] text-white mt-10">
-			<div className="max-w-7xl mx-auto px-6 py-8 border-t border-[#FF414E]">
+			<div className="max-w-7xl mx-auto px-6 py-8 border-t border-accent">
 				<div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-sm">
 					{/* Top Movies */}
 					<div>
 						<h4 className="font-semibold mb-3">Top Movies</h4>
-						<ul className="space-y-2 text-[#FF414E]">
+						<ul className="space-y-2 text-accent">
 							<li>
 								<a href="#" className="hover:underline">
 									John Wick 4
@@ -35,7 +35,7 @@ export default function Footer() {
 					{/* Top TV Shows */}
 					<div>
 						<h4 className="font-semibold mb-3">Top TV Shows</h4>
-						<ul className="space-y-2 text-[#FF414E]">
+						<ul className="space-y-2 text-accent">
 							<li>
 								<a href="#" className="hover:underline">
 									The Breaking Bad
@@ -62,7 +62,7 @@ export default function Footer() {
 					{/* Support */}
 					<div>
 						<h4 className="font-semibold mb-3">Support</h4>
-						<ul className="space-y-2 text-[#FF414E]">
+						<ul className="space-y-2 text-accent">
 							<li>
 								<a href="#" className="hover:underline">
 									About Us
@@ -91,13 +91,13 @@ export default function Footer() {
 						<h4 className="font-semibold mb-3">Follow us</h4>
 						<div className="flex space-x-4">
 							<a href="#">
-								<FaInstagram className="text-[#FF414E] hover:text-white" />
+								<FaInstagram className="text-accent hover:text-white" />
 							</a>
 							<a href="#">
-								<FaFacebookF className="text-[#FF414E] hover:text-white" />
+								<FaFacebookF className="text-accent hover:text-white" />
 							</a>
 							<a href="#">
-								<FaTwitter className="text-[#FF414E] hover:text-white" />
+								<FaTwitter className="text-accent hover:text-white" />
 							</a>
 						</div>
 					</div>

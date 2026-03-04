@@ -161,7 +161,7 @@ export default function Hero({
 				{/* Rating + Title + Year */}
 				<div className="flex items-center gap-2 md:gap-4 mb-2 flex-nowrap overflow-hidden max-w-full">
 					{typeof rating === "number" && (
-						<span className="text-yellow-400 text-sm whitespace-nowrap shrink-0">
+						<span className="text-warning text-sm whitespace-nowrap shrink-0">
 							★ {rating.toFixed(1)}
 						</span>
 					)}
@@ -188,7 +188,7 @@ export default function Hero({
 						{genre_ids.map((id) => (
 							<span
 								key={id}
-								className="px-3 sm:px-4 py-1 rounded-full text-xs sm:text-sm text-white border border-[#FF414E] bg-white/10 backdrop-blur-sm whitespace-nowrap"
+								className="px-3 sm:px-4 py-1 rounded-full text-xs sm:text-sm text-white border border-accent bg-white/10 backdrop-blur-sm whitespace-nowrap"
 							>
 								{GENRE_MAP[id]}
 							</span>
@@ -200,7 +200,7 @@ export default function Hero({
 				<div className="mt-4 md:mt-6 flex gap-3 md:gap-4 justify-center md:justify-start">
 					<button
 						onClick={() => router.push(`/${type}/${id}`)}
-						className="px-4 sm:px-6 py-2 bg-[#FF414E] hover:bg-[#e63946] text-white font-semibold rounded-full cursor-pointer text-sm sm:text-base"
+						className="px-4 sm:px-6 py-2 bg-accent hover:bg-accent-hover text-white font-semibold rounded-full cursor-pointer text-sm sm:text-base"
 					>
 						More Info
 					</button>

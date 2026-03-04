@@ -1,13 +1,68 @@
 @import "tailwindcss";
 
 :root {
-  --background: #070707;
-  --foreground: #ededed;
+  /* Base Background */
+  --color-bg-base: #070707;
+
+  /* Surfaces */
+  --color-surface-1: #141414;
+  --color-surface-2: #1e2939; /* #1b1b1b  */
+  --color-surface-3: #101010;
+  --color-surface-neutral: #364153; /* #2a2a2a  */
+  --color-surface-dark: #101828;
+
+  /* Borders */
+  --color-border-default: rgba(255, 255, 255, 0.06);
+  --color-border-strong: rgba(255, 255, 255, 0.12);
+
+  /* Text */
+  --color-text-primary: #ededed;
+  --color-text-muted-1: #a3a3a3;
+  --color-text-muted-2: #737373; 
+  
+  /* Accent (HSL) */
+  --color-brand-accent: #FF414E;
+
+  /* Status */
+  --color-status-success: #22c55e;
+  --color-status-warning: #facc15;
+}
+
+/* ============================= */
+/* TAILWIND THEME TOKENS */
+/* ============================= */
+
+@theme inline {
+  /* Backgrounds */
+  --color-background: var(--color-bg-base);
+
+  --color-surface: var(--color-surface-1);
+  --color-surface-elevated: var(--color-surface-2);
+  --color-surface-muted: var(--color-surface-3);
+  --color-surface-neutral: var(--color-surface-neutral);
+  --color-surface-dark: var(--color-surface-dark);
+
+  /* Borders */
+  --color-border: var(--color-border-default);
+  --color-border-strong: var(--color-border-strong);
+
+  /* Text */
+  --color-foreground: var(--color-text-primary);
+  --color-muted: var(--color-text-muted-1);
+  --color-muted-2: var(--color-text-muted-2);
+
+  /* Accent */
+  --color-accent: var(--color-brand-accent);
+  --color-accent-hover: #E63946;
+
+  /* Status */
+  --color-success: var(--color-status-success);
+  --color-warning: var(--color-status-warning);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--color-bg-base);
+  color: var(--color-text-primary);
   font-family: Poppins, sans-serif;
 }
 
@@ -15,7 +70,30 @@ button {
   cursor: pointer;
 }
 
+/* Modern Dark Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
 
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #2a2a2a;
+  border-radius: 9999px;
+  transition: background 0.2s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #FF414E;
+}
+
+/* Firefox */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #2a2a2a transparent;
+}
 
 
 

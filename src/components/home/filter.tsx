@@ -95,7 +95,7 @@ export default function FilterSidebar({ onFilterChange }: Props) {
 									key={genre}
 									className={`flex items-center gap-2 cursor-pointer rounded px-2 py-1 ${
 										selectedGenres.includes(genre)
-											? "bg-[#FF414E]/80"
+											? "bg-accent/80"
 											: "bg-white/10"
 									}`}
 								>
@@ -103,7 +103,7 @@ export default function FilterSidebar({ onFilterChange }: Props) {
 										type="checkbox"
 										checked={selectedGenres.includes(genre)}
 										onChange={() => toggleGenre(genre)}
-										className="accent-[#FF414E]"
+										className="accent-accent"
 									/>
 									<span className="text-sm">{genre}</span>
 								</label>
@@ -121,7 +121,7 @@ export default function FilterSidebar({ onFilterChange }: Props) {
 								sort: "popularity",
 							});
 						}}
-						className="w-full py-2 rounded bg-[#FF414E] hover:bg-[#e63946] text-white font-medium"
+						className="w-full py-2 rounded bg-accent hover:bg-accent-hover text-white font-medium"
 					>
 						Clear All
 					</button>

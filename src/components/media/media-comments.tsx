@@ -282,13 +282,13 @@ function Avatar({ avatar, initials }: { avatar?: string; initials: string }) {
 			<img
 				src={avatar}
 				alt={initials}
-				className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover shrink-0 border border-gray-700"
+				className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover shrink-0 border border-surface-neutral"
 			/>
 		);
 	}
 
 	return (
-		<div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gray-800 flex items-center justify-center text-[10px] sm:text-xs font-semibold text-white shrink-0 border border-gray-700">
+		<div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-surface-elevated flex items-center justify-center text-[10px] sm:text-xs font-semibold text-white shrink-0 border border-surface-neutral">
 			{initials}
 		</div>
 	);
@@ -321,12 +321,10 @@ function CommentItem({
 					<span className="text-sm font-semibold text-white">
 						{comment.author}
 					</span>
-					<span className="text-xs text-gray-500">
-						{comment.date}
-					</span>
+					<span className="text-xs text-muted-2">{comment.date}</span>
 				</div>
 
-				<p className="mt-1 text-sm text-gray-300 leading-relaxed">
+				<p className="mt-1 text-sm text-muted leading-relaxed">
 					{comment.text}
 				</p>
 
@@ -335,13 +333,13 @@ function CommentItem({
 						onClick={handleLike}
 						className={`flex items-center gap-1 transition ${
 							liked
-								? "text-[#FF414E]"
-								: "text-gray-500 hover:text-white"
+								? "text-accent"
+								: "text-muted-2 hover:text-white"
 						}`}
 					>
 						<ThumbsUp
 							className={`h-3 w-3 sm:h-4 sm:w-4 ${
-								liked ? "fill-[#FF414E]" : ""
+								liked ? "fill-accent" : ""
 							}`}
 						/>
 						{likes}
@@ -350,14 +348,14 @@ function CommentItem({
 					{!isReply && (
 						<button
 							onClick={() => setShowReplyInput(!showReplyInput)}
-							className="flex items-center gap-1 text-gray-500 hover:text-white transition"
+							className="flex items-center gap-1 text-muted-2 hover:text-white transition"
 						>
 							<Reply className="h-3 w-3 sm:h-4 sm:w-4" />
 							Reply
 						</button>
 					)}
 
-					<button className="ml-auto text-gray-500 hover:text-white transition">
+					<button className="ml-auto text-muted-2 hover:text-white transition">
 						<MoreHorizontal className="h-3 w-3 sm:h-4 sm:w-4" />
 					</button>
 				</div>
@@ -366,10 +364,10 @@ function CommentItem({
 				{showReplyInput && (
 					<div className="mt-3 flex gap-2">
 						<textarea
-							className="flex-1 bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 text-sm text-gray-200 resize-none focus:outline-none focus:ring-1 focus:ring-[#FF414E]"
+							className="flex-1 bg-surface-dark border border-surface-elevated rounded-lg px-3 py-2 text-sm text-muted resize-none focus:outline-none focus:ring-1 focus:ring-accent"
 							placeholder="Write a reply..."
 						/>
-						<button className="bg-[#FF414E] hover:opacity-90 transition px-3 py-2 rounded-lg flex items-center justify-center">
+						<button className="bg-accent hover:opacity-90 transition px-3 py-2 rounded-lg flex items-center justify-center">
 							<Send className="h-4 w-4 text-white" />
 						</button>
 					</div>
@@ -384,7 +382,6 @@ function CommentItem({
 				{comment.replies?.map((reply) => (
 					<CommentItem key={reply.id} comment={reply} isReply />
 				))}
-
 			</div>
 		</div>
 	);
@@ -401,18 +398,18 @@ export default function MediaComments({ comments }: MediaCommentsProps) {
 			<div className="max-w-4xl space-y-8">
 				<h2 className="text-xl sm:text-2xl font-semibold text-white">
 					Comments{" "}
-					<span className="text-gray-500 text-base sm:text-lg">
+					<span className="text-muted-2 text-base sm:text-lg">
 						({commentList.length})
 					</span>
 				</h2>
 
 				{/* ===== New Comment Box ===== */}
-				<div className="bg-gray-900/70 backdrop-blur border border-gray-800 rounded-2xl p-4 sm:p-6">
+				<div className="bg-surface-dark/70 backdrop-blur border border-surface-elevated rounded-2xl p-4 sm:p-6">
 					<div className="flex gap-3">
 						<img
 							src="/images/avatar.jpg"
 							alt="You"
-							className="w-10 h-10 rounded-full object-cover border border-gray-700 shrink-0"
+							className="w-10 h-10 rounded-full object-cover border border-surface-neutral shrink-0"
 						/>
 
 						<div className="flex-1 space-y-3">
@@ -420,13 +417,13 @@ export default function MediaComments({ comments }: MediaCommentsProps) {
 								value={newComment}
 								onChange={(e) => setNewComment(e.target.value)}
 								placeholder="Share your thoughts..."
-								className="w-full bg-gray-800/80 border border-gray-700 rounded-xl px-4 py-3 text-sm text-gray-200 resize-none focus:outline-none focus:ring-1 focus:ring-[#FF414E]"
+								className="w-full bg-surface-elevated/80 border border-surface-neutral rounded-xl px-4 py-3 text-sm text-muted resize-none focus:outline-none focus:ring-1 focus:ring-accent"
 							/>
 
 							<div className="flex justify-end">
 								<button
 									disabled={!newComment.trim()}
-									className="bg-[#FF414E] hover:opacity-90 transition px-5 py-2 rounded-full text-sm font-medium flex items-center gap-2 disabled:opacity-50"
+									className="bg-accent hover:opacity-90 transition px-5 py-2 rounded-full text-sm font-medium flex items-center gap-2 disabled:opacity-50"
 								>
 									<Send className="h-4 w-4" />
 									Post
@@ -442,7 +439,7 @@ export default function MediaComments({ comments }: MediaCommentsProps) {
 						<div key={comment.id}>
 							<CommentItem comment={comment} />
 							{i < commentList.length - 1 && (
-								<div className="mt-8 border-t border-gray-800" />
+								<div className="mt-8 border-t border-surface-elevated" />
 							)}
 						</div>
 					))}

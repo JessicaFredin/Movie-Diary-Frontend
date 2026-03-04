@@ -43,16 +43,16 @@ export default function LoginForm() {
 			/>
 
 			<div className="flex items-center justify-between text-sm">
-				<label className="flex items-center gap-2 text-gray-300">
+				<label className="flex items-center gap-2 text-muted">
 					<input
 						type="checkbox"
 						checked={remember}
 						onChange={(e) => setRemember(e.target.checked)}
-						className="accent-[#FF414E] w-4 h-4"
+						className="accent-accent w-4 h-4"
 					/>
 					Remember me
 				</label>
-				<a href="#" className="text-gray-400 hover:text-white">
+				<a href="#" className="text-muted hover:text-white">
 					Forgot password?
 				</a>
 			</div>
@@ -70,7 +70,7 @@ export default function LoginForm() {
 						avatar: "/images/avatar.jpg",
 					})
 				}
-				className="mt-4 rounded bg-red-500 px-4 py-2"
+				className="mt-4 rounded bg-accent px-4 py-2"
 			>
 				Dev login
 			</button>
@@ -84,7 +84,7 @@ export default function LoginForm() {
 				Facebook
 			</Button>
 
-			<p className="text-sm text-gray-400 text-center">
+			<p className="text-sm text-muted text-center">
 				Don’t have an account?{" "}
 				<a href="/signup" className="text-white hover:underline">
 					Signup

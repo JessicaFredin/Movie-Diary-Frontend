@@ -85,8 +85,8 @@ export default function SettingsPage() {
 				</section>
 
 				{/* DANGER ZONE */}
-				<section className="bg-red-500/10 border border-red-500/20 rounded-xl p-6">
-					<h2 className="text-lg font-medium text-red-400 mb-4">
+				<section className="bg-accent/10 border border-accent/20 rounded-xl p-6">
+					<h2 className="text-lg font-medium text-accent mb-4">
 						Danger zone
 					</h2>
 
@@ -94,7 +94,7 @@ export default function SettingsPage() {
 						<span className="text-white/70">
 							Clear all diary entries
 						</span>
-						<button className="px-4 py-2 rounded-md bg-red-500/20 text-red-300 hover:bg-red-500/30">
+						<button className="px-4 py-2 rounded-md bg-accent/20 text-accent hover:bg-accent-hover/30">
 							Clear
 						</button>
 					</div>

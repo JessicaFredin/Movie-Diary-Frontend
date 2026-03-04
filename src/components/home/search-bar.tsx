@@ -20,13 +20,13 @@ export default function SearchBar({ onSearch }: Props) {
 			onSubmit={handleSubmit}
 			className="flex items-center gap-2 bg-white/10 rounded-full px-3 py-2 w-full md:w-72"
 		>
-			<Icon icon="mdi:magnify" className="w-5 h-5 text-gray-300" />
+			<Icon icon="mdi:magnify" className="w-5 h-5 text-muted" />
 			<input
 				type="text"
 				placeholder="Search movies & shows..."
 				value={query}
 				onChange={(e) => setQuery(e.target.value)}
-				className="bg-transparent outline-none text-sm text-white w-full placeholder-gray-400"
+				className="bg-transparent outline-none text-sm text-white w-full placeholder-muted"
 			/>
 		</form>
 	);

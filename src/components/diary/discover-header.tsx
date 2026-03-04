@@ -38,8 +38,8 @@ export default function DiscoverHeader({
 						}
 						className={`text-sm cursor-pointer ${
 							activeTab === tab
-								? "text-[#FF414E] font-semibold"
-								: "text-gray-400 hover:text-white"
+								? "text-accent font-semibold"
+								: "text-muted hover:text-white"
 						}`}
 					>
 						{tab === "all"
@@ -54,7 +54,7 @@ export default function DiscoverHeader({
 			{/* Bottom row: left = titles + sort, right = search + filter */}
 			<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
 				{/* Left side */}
-				<div className="flex items-center gap-6 text-sm text-gray-300">
+				<div className="flex items-center gap-6 text-sm text-muted">
 					<p>{total} Titles</p>
 					<SortDropdown value={sort} onChange={onSortChange} />
 				</div>

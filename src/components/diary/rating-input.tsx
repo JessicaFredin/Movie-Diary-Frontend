@@ -6,7 +6,7 @@ type Props = {
 export default function RatingInput({ value, onChange }: Props) {
 	return (
 		<div>
-			<p className="mb-2 text-sm text-gray-400">Your rating (optional)</p>
+			<p className="mb-2 text-sm text-muted">Your rating (optional)</p>
 			<input
 				type="number"
 				min={1}
@@ -19,7 +19,7 @@ export default function RatingInput({ value, onChange }: Props) {
 						e.target.value === "" ? null : Number(e.target.value),
 					)
 				}
-				className="w-full rounded-lg bg-gray-800 px-3 py-2 text-sm"
+				className="w-full rounded-lg bg-surface-elevated px-3 py-2 text-sm"
 			/>
 		</div>
 	);

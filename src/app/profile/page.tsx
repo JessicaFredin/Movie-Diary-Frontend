@@ -129,7 +129,7 @@
 // 	)
 // }
 
-// app/profile/page.tsx (SERVER)
+
 import RecentlyLogged from "@/components/profile/recently-logged";
 import ProfileBanner from "@/components/profile/profile-banner";
 import ProfileAvatar from "@/components/profile/profile-avatar";

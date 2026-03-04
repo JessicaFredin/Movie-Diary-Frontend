@@ -34,7 +34,7 @@ export default function MediaFriends({ friends }: Props) {
 				<span className="font-medium text-white">
 					{friends.length} friends
 				</span>{" "}
-				<span className="text-gray-400">have watched this</span>
+				<span className="text-muted">have watched this</span>
 			</p>
 		</div>
 	);

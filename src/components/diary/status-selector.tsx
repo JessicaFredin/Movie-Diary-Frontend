@@ -8,7 +8,7 @@ const options: Props["value"][] = ["watching", "completed", "planned"];
 export default function StatusSelector({ value, onChange }: Props) {
 	return (
 		<div>
-			<p className="mb-2 text-sm text-gray-400">Status</p>
+			<p className="mb-2 text-sm text-muted">Status</p>
 			<div className="flex gap-2">
 				{options.map((opt) => (
 					<button
@@ -17,7 +17,7 @@ export default function StatusSelector({ value, onChange }: Props) {
 						className={`flex-1 rounded-full py-2 text-sm capitalize transition ${
 							value === opt
 								? "bg-white text-black"
-								: "bg-gray-800 text-gray-300"
+								: "bg-surface-elevated text-muted"
 						}`}
 					>
 						{opt}

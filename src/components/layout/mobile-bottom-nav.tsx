@@ -16,7 +16,7 @@ export default function MobileBottomNav() {
 	const pathname = usePathname();
 
 	return (
-		<nav className="fixed bottom-0 left-0 right-0 z-50 bg-gray-900 border-t border-gray-800 md:hidden">
+		<nav className="fixed bottom-0 left-0 right-0 z-50 bg-surface-dark border-t border-surface-elevated md:hidden">
 			<ul className="flex justify-around py-2">
 				{items.map(({ href, label, icon: Icon }) => {
 					const active = pathname === href;
@@ -29,16 +29,12 @@ export default function MobileBottomNav() {
 							>
 								<Icon
 									className={`w-5 h-5 ${
-										active
-											? "text-red-400"
-											: "text-gray-400"
+										active ? "text-accent" : "text-muted"
 									}`}
 								/>
 								<span
 									className={
-										active
-											? "text-red-400"
-											: "text-gray-400"
+										active ? "text-accent" : "text-muted"
 									}
 								>
 									{label}

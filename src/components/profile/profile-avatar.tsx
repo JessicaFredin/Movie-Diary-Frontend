@@ -10,7 +10,7 @@ export default function ProfileAvatar() {
 						src="/images/avatar.jpg"
 						alt="Profile avatar"
 						fill
-						className="object-cover rounded-full border-2 border-[#FF414E] shadow-[0_0_15px_#FF414E]"
+						className="object-cover rounded-full border-2 border-accent shadow-[0_0_15px_#FF414E]"
 					/>
 				</div>
 			</div>

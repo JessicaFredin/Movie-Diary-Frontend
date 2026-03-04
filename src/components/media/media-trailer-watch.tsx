@@ -28,7 +28,7 @@ export default function MediaTrailerWatch({
 					<h2 className="mb-3 text-xl font-semibold">Trailer</h2>
 
 					{trailer ? (
-						<div className="relative aspect-video rounded-2xl overflow-hidden bg-gray-800 shadow-lg">
+						<div className="relative aspect-video rounded-2xl overflow-hidden bg-surface-elevated shadow-lg">
 							<iframe
 								src={`https://www.youtube.com/embed/${trailer.key}`}
 								title="Trailer"
@@ -38,7 +38,7 @@ export default function MediaTrailerWatch({
 							/>
 						</div>
 					) : (
-						<p className="text-sm text-gray-400">
+						<p className="text-sm text-muted">
 							Trailer not available.
 						</p>
 					)}
@@ -55,7 +55,7 @@ export default function MediaTrailerWatch({
 							{providers.map((provider) => (
 								<button
 									key={provider.provider_id}
-									className="w-full flex items-center justify-between rounded-2xl bg-gray-900 border border-gray-800 px-5 py-4 text-sm hover:bg-gray-800 transition-all duration-300"
+									className="w-full flex items-center justify-between rounded-2xl bg-surface-dark border border-surface-elevated px-5 py-4 text-sm hover:bg-surface-elevated transition-all duration-300"
 								>
 									<div className="flex items-center gap-4">
 										<Image
@@ -65,17 +65,17 @@ export default function MediaTrailerWatch({
 											height={36}
 											className="rounded-md"
 										/>
-										<span className="text-gray-200 font-medium">
+										<span className="text-muted font-medium">
 											{provider.provider_name}
 										</span>
 									</div>
 
-									<ChevronRight className="w-4 h-4 text-gray-400" />
+									<ChevronRight className="w-4 h-4 text-muted" />
 								</button>
 							))}
 						</div>
 					) : (
-						<p className="text-sm text-gray-400">
+						<p className="text-sm text-muted">
 							No streaming providers available in your region.
 						</p>
 					)}

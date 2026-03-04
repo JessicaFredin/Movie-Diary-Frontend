@@ -18,7 +18,7 @@ export default function SortDropdown({ value, onChange }: SortDropdownProps) {
 			{/* Trigger button */}
 			<button
 				onClick={() => setOpen(!open)}
-				className="flex items-center gap-1 text-white hover:text-[#FF414E] transition-colors cursor-pointer"
+				className="flex items-center gap-1 text-white hover:text-accent transition-colors cursor-pointer"
 			>
 				<span>sorted by {value}</span>
 				<ChevronDown size={16} />
@@ -35,7 +35,7 @@ export default function SortDropdown({ value, onChange }: SortDropdownProps) {
 									onChange(opt);
 									setOpen(false);
 								}}
-								className={`px-4 py-2 cursor-pointer hover:bg-gray-100 ${
+								className={`px-4 py-2 cursor-pointer hover:bg-muted ${
 									opt === value ? "font-semibold" : ""
 								}`}
 							>

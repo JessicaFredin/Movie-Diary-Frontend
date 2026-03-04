@@ -56,9 +56,9 @@ export default function SignupForm() {
 					type="checkbox"
 					checked={remember}
 					onChange={(e) => setRemember(e.target.checked)}
-					className="accent-[#FF414E] w-4 h-4"
+					className="accent-accent w-4 h-4"
 				/>
-				<span className="text-gray-300">
+				<span className="text-muted">
 					I agree to the Terms & Privacy
 				</span>
 			</div>
@@ -76,7 +76,7 @@ export default function SignupForm() {
 				Facebook
 			</Button>
 
-			<p className="text-sm text-gray-400 text-center">
+			<p className="text-sm text-muted text-center">
 				Already have an account?{" "}
 				<a href="/login" className="text-white hover:underline">
 					Login

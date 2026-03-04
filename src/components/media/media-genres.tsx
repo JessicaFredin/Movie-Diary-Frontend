@@ -14,7 +14,7 @@ export default function MediaGenres({ genres = [] }: Props) {
 			{genres.map((genre) => (
 				<span
 					key={genre.id}
-					className="bg-gray-800 px-2 md:px-3 py-0.5 md:py-1 rounded-full text-gray-300"
+					className="bg-surface-elevated px-2 md:px-3 py-0.5 md:py-1 rounded-full text-muted"
 				>
 					{genre.name}
 				</span>

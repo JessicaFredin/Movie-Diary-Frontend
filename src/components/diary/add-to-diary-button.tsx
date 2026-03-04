@@ -36,7 +36,7 @@ export default function AddToDiaryButton({
 				}}
 				disabled={isAdded || disabled}
 				className={`w-full rounded-full py-3 px-4 text-sm font-semibold flex items-center justify-center gap-2 transition
-					${isAdded ? "bg-green-600 cursor-default" : "bg-[#FF414E] hover:bg-[#e63946]"}
+					${isAdded ? "bg-green-600 cursor-default" : "bg-accent hover:bg-accent-hover"}
 				`} 
 			>
 				<Icon icon={icon} className="w-4 h-4" />
@@ -86,7 +86,7 @@ export default function AddToDiaryButton({
 			disabled={isAdded || disabled}
 			title={isAdded ? "Already in diary" : "Add to diary"}
 			className={`p-1.5 rounded-full text-white transition
-				${isAdded ? "bg-green-600 cursor-default" : "bg-[#FF414E] hover:bg-[#e63946]"}
+				${isAdded ? "bg-green-600 cursor-default" : "bg-accent hover:bg-accent-hover"}
 			`}
 		>
 			<Icon icon={icon} className="w-5 h-5" />

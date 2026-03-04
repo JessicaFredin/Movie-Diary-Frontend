@@ -13,7 +13,7 @@ export default function ExpandableText({ text, color }: Props) {
 	const [showButton, setShowButton] = useState(false);
 	const textRef = useRef<HTMLParagraphElement>(null);
 
-	const textColor = color || "text-gray-300";
+	const textColor = color || "text-muted";
 
 	useLayoutEffect(() => {
 		const checkOverflow = () => {
@@ -62,7 +62,7 @@ export default function ExpandableText({ text, color }: Props) {
 				<button
 					type="button"
 					onClick={() => setExpanded((v) => !v)}
-					className="flex items-center gap-1 text-sm font-medium text-[#FF414E]"
+					className="flex items-center gap-1 text-sm font-medium text-accent"
 				>
 					<span>{expanded ? "See less" : "See more"}</span>
 					{expanded ? (
