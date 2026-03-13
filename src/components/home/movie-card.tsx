@@ -425,6 +425,7 @@ import { getPosterUrl } from "@/utils/tmdb-image";
 import formatDate from "@/utils/format-date";
 import { isInDiary } from "@/utils/is-in-diary";
 import AddToDiaryButton from "../diary/add-to-diary-button";
+import { Pencil, Trash2 } from "lucide-react";
 
 type AddPayload = {
 	id: number;
@@ -452,6 +453,8 @@ type MovieCardProps = {
 	lastLogged?: string;
 	status?: "watching" | "completed" | "planned";
 	onAdd?: (payload: AddPayload) => void;
+	onEdit?: () => void;
+	onDelete?: () => void;
 };
 
 export default function MovieCard({
@@ -462,6 +465,8 @@ export default function MovieCard({
 	rating,
 	type,
 	onAdd,
+	onEdit,
+	onDelete,
 	variant = "home",
 	progress,
 	lastLogged,
@@ -495,6 +500,37 @@ export default function MovieCard({
 				height={isHome ? 300 : 260}
 				className="rounded-xl shadow-xl object-cover w-full h-auto"
 			/>
+
+			{/* Top-right action buttons (only if already added) */}
+			{alreadyAdded && (onEdit || onDelete) && (
+				<div className="absolute top-2 right-2 flex flex-col gap-2 z-20">
+					{onEdit && (
+						<button
+							onClick={(e) => {
+								e.stopPropagation();
+								onEdit();
+							}}
+							className="p-1.5 rounded-full bg-black/70 text-white hover:bg-accent transition"
+							title="Edit entry"
+						>
+							<Pencil size={16} />
+						</button>
+					)}
+
+					{onDelete && (
+						<button
+							onClick={(e) => {
+								e.stopPropagation();
+								onDelete();
+							}}
+							className="p-1.5 rounded-full bg-black/70 text-white hover:bg-red-500 transition"
+							title="Remove from diary"
+						>
+							<Trash2 size={16} />
+						</button>
+					)}
+				</div>
+			)}
 
 			{variant === "logged" && progress && (
 				<div className="absolute top-2 left-2 bg-black/70 text-white text-[11px] px-2 py-1 rounded-md shadow-md">
@@ -553,11 +589,11 @@ export default function MovieCard({
 						</span>
 					)}
 
-					{isLogged && lastLogged && (
+					{/* {isLogged && lastLogged && (
 						<p className="text-[11px] text-muted">
 							Last logged: {formatDate(lastLogged)}
 						</p>
-					)}
+					)} */}
 				</div>
 			</div>
 		</div>

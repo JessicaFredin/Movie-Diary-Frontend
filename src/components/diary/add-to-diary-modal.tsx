@@ -9,6 +9,7 @@ import type { TvShow } from "@/types";
 import { updateDiaryEntry } from "@/utils/diary-storage";
 import { calculateTvProgress } from "@/utils/progress";
 import { getPosterUrl } from "@/utils/tmdb-image";
+import { DiaryEntry } from "@/types/diary";
 
 type Props = {
 	open: boolean;
@@ -17,12 +18,18 @@ type Props = {
 		id: number;
 		type: "movie" | "tv";
 		title: string;
-		poster: string ;
+		poster: string;
 		backdrop: string;
 	};
+	initialData?: DiaryEntry; 
 };
 
-export default function AddToDiaryModal({ open, onClose, content }: Props) {
+export default function AddToDiaryModal({
+	open,
+	onClose,
+	content,
+	initialData,
+}: Props) {
 	const [status, setStatus] = useState<"watching" | "completed" | "planned">(
 		content.type === "movie" ? "completed" : "watching",
 	);
@@ -32,6 +39,44 @@ export default function AddToDiaryModal({ open, onClose, content }: Props) {
 	const [rating, setRating] = useState<number | null>(null);
 
 	const [tvDetails, setTvDetails] = useState<TvShow | null>(null);
+
+	/* -------------------------------
+	   PREFILL WHEN EDITING
+	--------------------------------*/
+	useEffect(() => {
+		if (!initialData) return;
+
+		setStatus(initialData.status);
+		setRating(initialData.rating ?? null);
+
+		if (initialData.progress) {
+			setSeason(initialData.progress.currentSeason);
+			setEpisode(initialData.progress.currentEpisode);
+		}
+	}, [initialData]);
+
+	useEffect(() => {
+		if (!open) return;
+
+		// EDIT MODE
+		if (initialData) {
+			setStatus(initialData.status);
+			setRating(initialData.rating ?? null);
+
+			if (initialData.progress) {
+				setSeason(initialData.progress.currentSeason);
+				setEpisode(initialData.progress.currentEpisode);
+			}
+
+			return;
+		}
+
+		// ADD MODE (reset defaults)
+		setStatus(content.type === "movie" ? "completed" : "watching");
+		setRating(null);
+		setSeason(1);
+		setEpisode(1);
+	}, [open, initialData, content.type]);
 
 	useEffect(() => {
 		if (!open || content.type !== "tv") return;
@@ -44,16 +89,19 @@ export default function AddToDiaryModal({ open, onClose, content }: Props) {
 
 	useEffect(() => {
 		if (!tvDetails?.seasons?.length) return;
+		if (initialData) return; // 🔥 do NOT override edit mode
 
 		const firstSeason = tvDetails.seasons[0].season_number;
 		setSeason(firstSeason);
 		setEpisode(1);
-	}, [tvDetails]);
+	}, [tvDetails, initialData]);
 
 	if (!open) return null;
 
+	/* -------------------------------
+	   SAVE (ADD OR EDIT)
+	--------------------------------*/
 	function handleSave() {
-		const finalStatus = status;
 		let progress = undefined;
 
 		if (
@@ -64,13 +112,13 @@ export default function AddToDiaryModal({ open, onClose, content }: Props) {
 			progress = calculateTvProgress(tvDetails.seasons, season, episode);
 		}
 
-		const entry = {
+		const entry: DiaryEntry = {
 			id: content.id,
 			type: content.type,
 			title: content.title,
 			poster: content.poster,
 			backdrop: content.backdrop,
-			status: finalStatus,
+			status,
 			progress,
 			rating,
 			updatedAt: new Date().toISOString(),
@@ -79,6 +127,34 @@ export default function AddToDiaryModal({ open, onClose, content }: Props) {
 		updateDiaryEntry(entry);
 		onClose();
 	}
+
+	// function handleSave() {
+	// 	const finalStatus = status;
+	// 	let progress = undefined;
+
+	// 	if (
+	// 		content.type === "tv" &&
+	// 		tvDetails?.seasons &&
+	// 		status !== "planned"
+	// 	) {
+	// 		progress = calculateTvProgress(tvDetails.seasons, season, episode);
+	// 	}
+
+	// 	const entry = {
+	// 		id: content.id,
+	// 		type: content.type,
+	// 		title: content.title,
+	// 		poster: content.poster,
+	// 		backdrop: content.backdrop,
+	// 		status: finalStatus,
+	// 		progress,
+	// 		rating,
+	// 		updatedAt: new Date().toISOString(),
+	// 	};
+
+	// 	updateDiaryEntry(entry);
+	// 	onClose();
+	// }
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">

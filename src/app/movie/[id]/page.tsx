@@ -10,6 +10,7 @@ import MediaTrailerWatch from "@/components/media/media-trailer-watch";
 import MediaCast from "@/components/media/media-cast";
 import MediaComments from "@/components/media/media-comments";
 import { Comment } from "@/types/comment";
+import { fetchMovieCast } from "@/services/tmdb-services";
 
 type PageProps = {
 	params: {
@@ -47,45 +48,6 @@ const MOCK_FRIEND_ACTIVITY = [
 		id: 6,
 		name: "Matilda",
 		avatar: "https://i.pravatar.cc/100?img=34",
-	},
-];
-
-const MOCK_CAST = [
-	{
-		id: 1,
-		name: "Timothée Chalamet",
-		character: "Paul Atreides",
-		image: "https://image.tmdb.org/t/p/w185/BE2sdjpgsa2rNTFa66f7upkaOP.jpg",
-	},
-	{
-		id: 2,
-		name: "Zendaya",
-		character: "Chani",
-		image: "https://image.tmdb.org/t/p/w185/BE2sdjpgsa2rNTFa66f7upkaOP.jpg",
-	},
-	{
-		id: 3,
-		name: "Rebecca Ferguson",
-		character: "Lady Jessica",
-		image: "https://image.tmdb.org/t/p/w185/lJloTOheuQSirSLXNA3JHsrMNfH.jpg",
-	},
-	{
-		id: 4,
-		name: "Oscar Isaac",
-		character: "Duke Leto",
-		image: "https://image.tmdb.org/t/p/w185/dW5U5yrIIPmMjRThR9KT2xH6nTz.jpg",
-	},
-	{
-		id: 5,
-		name: "Javier Bardem",
-		character: "Stilgar",
-		image: "https://image.tmdb.org/t/p/w185/BE2sdjpgsa2rNTFa66f7upkaOP.jpg",
-	},
-	{
-		id: 6,
-		name: "Javier Bardem",
-		character: "Stilgar",
-		image: "https://image.tmdb.org/t/p/w185/BE2sdjpgsa2rNTFa66f7upkaOP.jpg",
 	},
 ];
 
@@ -218,6 +180,8 @@ export default async function MovieDetailsPage({ params }: PageProps) {
 	const { id } = await params;
 	const movieId = Number(id);
 
+	const cast = await fetchMovieCast(movieId);
+
 	if (!movieId || Number.isNaN(movieId)) {
 		notFound();
 	}
@@ -242,7 +206,7 @@ export default async function MovieDetailsPage({ params }: PageProps) {
 			<MediaTrailerWatch trailer={trailer} providers={providers} />
 
 			{/* ===== CAST ===== */}
-			<MediaCast cast={MOCK_CAST} />
+			<MediaCast cast={cast} />
 
 			{/* ===== COMMENTS ===== */}
 			<MediaComments comments={MOCK_COMMENTS} />

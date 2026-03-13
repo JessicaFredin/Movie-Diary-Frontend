@@ -178,7 +178,6 @@ export async function fetchAllStreamingProviders(): Promise<WatchProvider[]> {
 	return Array.from(map.values());
 }
 
-
 export function searchTmdb(query: string, page = 1) {
 	return handleTmdbRequest<TMDBListResponse<Movie | TvShow>>(
 		tmdb.get("/search/multi", {
@@ -189,4 +188,46 @@ export function searchTmdb(query: string, page = 1) {
 			},
 		}),
 	);
+}
+
+export async function fetchMovieCast(movieId: number) {
+	const data = await handleTmdbRequest<{
+		cast: {
+			id: number;
+			name: string;
+			character: string;
+			profile_path: string | null;
+		}[];
+	}>(tmdb.get(`/movie/${movieId}/credits`));
+
+	return data.cast
+		.filter((actor) => actor.profile_path)
+		.slice(0, 12)
+		.map((actor) => ({
+			id: actor.id,
+			name: actor.name,
+			character: actor.character,
+			image: `https://image.tmdb.org/t/p/w185${actor.profile_path}`,
+		}));
+}
+
+export async function fetchTvShowCast(tvId: number) {
+	const data = await handleTmdbRequest<{
+		cast: {
+			id: number;
+			name: string;
+			character: string;
+			profile_path: string | null;
+		}[];
+	}>(tmdb.get(`/tv/${tvId}/credits`));
+
+	return data.cast
+		.filter((actor) => actor.profile_path)
+		.slice(0, 12)
+		.map((actor) => ({
+			id: actor.id,
+			name: actor.name,
+			character: actor.character,
+			image: `https://image.tmdb.org/t/p/w185${actor.profile_path}`,
+		}));
 }

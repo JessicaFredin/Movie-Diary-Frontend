@@ -26,7 +26,7 @@ export default function SortDropdown({ value, onChange }: SortDropdownProps) {
 
 			{/* Dropdown menu */}
 			{open && (
-				<div className="absolute left-0 mt-2 w-40 bg-white text-black rounded-md shadow-lg z-10">
+				<div className="absolute left-0 mt-2 w-40 bg-white text-black rounded-md shadow-lg z-90">
 					<ul className="py-2">
 						{options.map((opt) => (
 							<li

@@ -7,16 +7,32 @@ import MovieGrid from "@/components/diary/movie-grid";
 import LoadMoreButton from "@/components/diary/load-more-button";
 import { getDiary } from "@/utils/diary-storage";
 import { DiaryEntry } from "@/types/diary";
+import AddToDiaryModal from "@/components/diary/add-to-diary-modal";
+import { updateDiaryEntry, removeDiaryEntry } from "@/utils/diary-storage";
+
 
 export default function MyDiaryPage() {
 	const [activeTab, setActiveTab] = useState<"all" | "movies" | "tv">("all");
 	const [sort, setSort] = useState("Popularity");
 	const [query, setQuery] = useState("");
 	const [items, setItems] = useState<DiaryEntry[]>([]);
+	const [selectedEntry, setSelectedEntry] = useState<DiaryEntry | null>(null);
+	const [isModalOpen, setIsModalOpen] = useState(false);
 
 	useEffect(() => {
 		setItems(getDiary());
 	}, []);
+
+	function openEditModal(entry: DiaryEntry) {
+		setSelectedEntry(entry);
+		setIsModalOpen(true);
+	}
+
+	function handleDelete(entry: DiaryEntry) {
+		removeDiaryEntry(entry.id, entry.type);
+		setItems(getDiary());
+	}
+
 
 	const filteredItems = useMemo(() => {
 		return items.filter((item) => {
@@ -52,13 +68,37 @@ export default function MyDiaryPage() {
 				onQueryChange={setQuery}
 			/>
 
-			<MovieGrid items={searchedItems} />
+			<MovieGrid
+				items={searchedItems}
+				onEdit={openEditModal}
+				onDelete={handleDelete}
+			/>
 
 			<div className="flex justify-center mt-8 transition-all">
 				<LoadMoreButton
 					onClick={() => console.log("Load more clicked")}
 				/>
 			</div>
+
+			{isModalOpen && selectedEntry && (
+				<AddToDiaryModal
+					open={isModalOpen}
+					onClose={() => {
+						setIsModalOpen(false);
+						setSelectedEntry(null);
+						setItems(getDiary()); // REFRESH AFTER SAVE
+					}}
+					content={{
+						id: selectedEntry.id,
+						type: selectedEntry.type,
+						title: selectedEntry.title,
+						poster: selectedEntry.poster,
+						backdrop:
+							selectedEntry.backdrop ?? selectedEntry.poster,
+					}}
+					initialData={selectedEntry}
+				/>
+			)}
 		</div>
 	);
 }
