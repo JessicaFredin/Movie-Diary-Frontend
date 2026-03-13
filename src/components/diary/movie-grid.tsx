@@ -3,8 +3,8 @@ import { DiaryEntry } from "@/types/diary";
 
 type Props = {
 	items: DiaryEntry[];
-	onEdit: (entry: DiaryEntry) => void;
-	onDelete: (entry: DiaryEntry) => void;
+	onEdit?: (entry: DiaryEntry) => void;
+	onDelete?: (entry: DiaryEntry) => void;
 };
 
 export default function MovieGrid({ items, onEdit, onDelete }: Props) {
@@ -22,8 +22,8 @@ export default function MovieGrid({ items, onEdit, onDelete }: Props) {
 					lastLogged={entry.updatedAt}
 					status={entry.status}
 					progress={entry.progress}
-					onEdit={() => onEdit(entry)}
-					onDelete={() => onDelete(entry)}
+					onEdit={() => onEdit?.(entry)}
+					onDelete={() => onDelete?.(entry)}
 				/>
 			))}
 		</div>
