@@ -442,7 +442,7 @@ type MovieCardProps = {
 	backdropPath: string | null;
 	rating?: number;
 	type: "movie" | "tv";
-	variant?: "home" | "diary" | "logged";
+	variant?: "home" | "diary" | "logged" | "watchlist";
 	progress?: {
 		currentSeason: number;
 		currentEpisode: number;
@@ -474,6 +474,7 @@ export default function MovieCard({
 	const router = useRouter();
 	const isHome = variant === "home";
 	const isLogged = variant === "logged";
+	const isWatchlist = variant === "watchlist"
 
 	const [alreadyAdded, setAlreadyAdded] = useState(false);
 
@@ -546,7 +547,7 @@ export default function MovieCard({
 				opacity-0 hover:opacity-100 transition-opacity duration-300 flex flex-col p-3
 				${isHome ? "justify-between" : "justify-end"}`}
 			>
-				{isHome && (
+				{(isHome || isWatchlist) && (
 					<div className="flex justify-between items-start">
 						{typeof rating === "number" && (
 							<span className="text-warning text-xs font-medium bg-black/60 px-2 py-0.5 rounded-md">
@@ -554,7 +555,7 @@ export default function MovieCard({
 							</span>
 						)}
 
-						{onAdd && (
+						{/* {onAdd && (
 							<AddToDiaryButton
 								variant="card"
 								isAdded={alreadyAdded}
@@ -570,6 +571,27 @@ export default function MovieCard({
 									});
 								}}
 							/>
+						)} */}
+
+						{(isHome || isWatchlist) && onAdd && (
+							<div className="absolute top-2 right-2 z-20">
+								<AddToDiaryButton
+									variant="card"
+									isAdded={alreadyAdded}
+									onClick={() => {
+										if (!posterPath || !backdropPath)
+											return;
+
+										onAdd({
+											id,
+											type,
+											title,
+											poster: posterPath,
+											backdrop: backdropPath,
+										});
+									}}
+								/>
+							</div>
 						)}
 					</div>
 				)}

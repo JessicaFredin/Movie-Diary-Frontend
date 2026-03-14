@@ -22,4 +22,7 @@ export type DiaryEntry = {
 	rating?: number | null;
 
 	updatedAt: string;
+
+	genre?: string;
+	service?: string;
 };

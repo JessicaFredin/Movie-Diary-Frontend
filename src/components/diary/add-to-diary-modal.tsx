@@ -10,6 +10,7 @@ import { updateDiaryEntry } from "@/utils/diary-storage";
 import { calculateTvProgress } from "@/utils/progress";
 import { getPosterUrl } from "@/utils/tmdb-image";
 import { DiaryEntry } from "@/types/diary";
+import { addToWatchlist } from "@/utils/watchlist-storage";
 
 type Props = {
 	open: boolean;
@@ -21,7 +22,8 @@ type Props = {
 		poster: string;
 		backdrop: string;
 	};
-	initialData?: DiaryEntry; 
+	initialData?: DiaryEntry;
+	onSave?: (status: "watching" | "completed" | "planned") => void;
 };
 
 export default function AddToDiaryModal({
@@ -29,6 +31,7 @@ export default function AddToDiaryModal({
 	onClose,
 	content,
 	initialData,
+	onSave,
 }: Props) {
 	const [status, setStatus] = useState<"watching" | "completed" | "planned">(
 		content.type === "movie" ? "completed" : "watching",
@@ -96,6 +99,59 @@ export default function AddToDiaryModal({
 		setEpisode(1);
 	}, [tvDetails, initialData]);
 
+	// useEffect(() => {
+	// 	if (
+	// 		content.type === "tv" &&
+	// 		tvDetails?.seasons?.length &&
+	// 		status === "watching"
+	// 	) {
+	// 		const lastSeason = tvDetails.seasons[tvDetails.seasons.length - 1];
+
+	// 		const lastEpisode = lastSeason.episode_count;
+
+	// 		if (
+	// 			season === lastSeason.season_number &&
+	// 			episode === lastEpisode
+	// 		) {
+	// 			setStatus("completed");
+	// 		}
+	// 	}
+	// }, [season, episode, tvDetails, status, content.type]);
+
+	useEffect(() => {
+		if (content.type !== "tv" || !tvDetails?.seasons?.length) return;
+
+		const lastSeason = tvDetails.seasons[tvDetails.seasons.length - 1];
+
+		const lastEpisode = lastSeason.episode_count;
+
+		const isFullyWatched =
+			season === lastSeason.season_number && episode === lastEpisode;
+
+		// If fully watched → completed
+		if (isFullyWatched && status !== "completed") {
+			setStatus("completed");
+		}
+
+		// If NOT fully watched but currently completed → revert to watching
+		if (!isFullyWatched && status === "completed") {
+			setStatus("watching");
+		}
+	}, [season, episode, tvDetails, content.type]);
+
+	useEffect(() => {
+		if (
+			content.type === "tv" &&
+			status === "completed" &&
+			tvDetails?.seasons?.length
+		) {
+			const lastSeason = tvDetails.seasons[tvDetails.seasons.length - 1];
+
+			setSeason(lastSeason.season_number);
+			setEpisode(lastSeason.episode_count);
+		}
+	}, [status, tvDetails, content.type]);
+
 	if (!open) return null;
 
 	/* -------------------------------
@@ -104,12 +160,35 @@ export default function AddToDiaryModal({
 	function handleSave() {
 		let progress = undefined;
 
+		// if (
+		// 	content.type === "tv" &&
+		// 	tvDetails?.seasons &&
+		// 	status !== "planned"
+		// ) {
+		// 	progress = calculateTvProgress(tvDetails.seasons, season, episode);
+		// }
+
 		if (
 			content.type === "tv" &&
 			tvDetails?.seasons &&
 			status !== "planned"
 		) {
-			progress = calculateTvProgress(tvDetails.seasons, season, episode);
+			if (status === "completed") {
+				const lastSeason =
+					tvDetails.seasons[tvDetails.seasons.length - 1];
+
+				progress = calculateTvProgress(
+					tvDetails.seasons,
+					lastSeason.season_number,
+					lastSeason.episode_count,
+				);
+			} else {
+				progress = calculateTvProgress(
+					tvDetails.seasons,
+					season,
+					episode,
+				);
+			}
 		}
 
 		const entry: DiaryEntry = {
@@ -124,7 +203,14 @@ export default function AddToDiaryModal({
 			updatedAt: new Date().toISOString(),
 		};
 
-		updateDiaryEntry(entry);
+		// If Planned send to watchlist otherwise to diary
+		if (status === "planned") {
+			addToWatchlist(entry);
+		} else {
+			updateDiaryEntry(entry);
+		}
+
+		onSave?.(status);
 		onClose();
 	}
 
@@ -198,9 +284,11 @@ export default function AddToDiaryModal({
 				)}
 
 				{/* OPTIONAL RATING */}
-				<div className="mt-4">
-					<RatingInput value={rating} onChange={setRating} />
-				</div>
+				{status !== "planned" && (
+					<div className="mt-4">
+						<RatingInput value={rating} onChange={setRating} />
+					</div>
+				)}
 
 				{/* ACTIONS */}
 				<div className="mt-6 flex gap-3">
