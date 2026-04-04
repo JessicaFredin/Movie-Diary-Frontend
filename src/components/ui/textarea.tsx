@@ -1,10 +1,10 @@
-import { InputHTMLAttributes } from "react";
+"use client";
 
-interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
-	label?: string;
-}
+type TextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
+	label: string;
+};
 
-export default function Input({ label, ...props }: InputProps) {
+export default function Textarea({ label, ...props }: TextareaProps) {
 	return (
 		<div className="flex flex-col gap-1 w-full mb-4">
 			{label && (
@@ -12,7 +12,8 @@ export default function Input({ label, ...props }: InputProps) {
 					{label}
 				</label>
 			)}
-			<input
+
+			<textarea
 				{...props}
 				className="px-4 py-3 rounded-xl bg-surface-muted text-white border border-border-strong 
                    focus:border-accent focus:ring-1 focus:ring-accent outline-none"

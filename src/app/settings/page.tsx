@@ -1,112 +1,141 @@
 "use client";
 
+import {
+	ArrowLeft,
+	Lock,
+	Globe,
+	Bell,
+	Shield,
+	Download,
+	Trash2,
+	ChevronRight,
+} from "lucide-react";
+
+import Link from "next/link";
+
 export default function SettingsPage() {
+	const settings = [
+		{
+			icon: <Lock size={18} />,
+			title: "Password & Security",
+			description: "Update password and login settings",
+			color: "bg-red-500/15 text-red-400",
+			route: "/settings/security",
+		},
+		{
+			icon: <Globe size={18} />,
+			title: "Language & Appearance",
+			description: "Display language and theme preferences",
+			color: "bg-blue-500/15 text-blue-400",
+			route: "/settings/language",
+		},
+		{
+			icon: <Bell size={18} />,
+			title: "Notifications",
+			description: "Manage how you receive alerts",
+			color: "bg-yellow-500/15 text-yellow-400",
+			route: "/settings/notifications",
+		},
+		{
+			icon: <Shield size={18} />,
+			title: "Privacy",
+			description: "Control who can see your activity",
+			color: "bg-green-500/15 text-green-400",
+			route: "/settings/privacy",
+		},
+		{
+			icon: <Download size={18} />,
+			title: "Data Export",
+			description: "Download a copy of your data",
+			color: "bg-purple-500/15 text-purple-400",
+			route: "/settings/export",
+		},
+		{
+			icon: <Trash2 size={18} />,
+			title: "Delete Account",
+			description: "Permanently remove your account",
+			color: "bg-red-600/15 text-red-500",
+			danger: true,
+			route: "/settings/delete",
+		},
+	];
+
 	return (
-		<main className="px-6 md:px-24 py-12 text-white">
-			<h1 className="text-2xl font-semibold mb-8">Settings</h1>
+		<div className="max-w-3xl mx-auto px-6 py-10 space-y-8">
+			{/* HEADER */}
+			<div className="flex items-center justify-between border-b border-border pb-4">
+				<div className="flex items-center gap-3">
+					<ArrowLeft
+						size={20}
+						className="text-muted cursor-pointer"
+					/>
 
-			<div className="space-y-10 max-w-3xl">
-				{/* PROFILE */}
-				<section className="bg-white/5 rounded-xl p-6">
-					<h2 className="text-lg font-medium mb-4">Profile</h2>
-
-					<div className="space-y-4">
-						<div>
-							<label className="text-sm text-white/70">
-								Display name
-							</label>
-							<input
-								type="text"
-								placeholder="Your name"
-								className="mt-1 w-full rounded-md bg-black/30 border border-white/10 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-white/20"
-							/>
-						</div>
-
-						<div>
-							<label className="text-sm text-white/70">
-								Email
-							</label>
-							<input
-								type="email"
-								placeholder="you@email.com"
-								className="mt-1 w-full rounded-md bg-black/30 border border-white/10 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-white/20"
-							/>
-						</div>
-					</div>
-				</section>
-
-				{/* PREFERENCES */}
-				<section className="bg-white/5 rounded-xl p-6">
-					<h2 className="text-lg font-medium mb-4">Preferences</h2>
-
-					<div className="space-y-4">
-						<label className="flex items-center justify-between">
-							<span className="text-white/80">Dark mode</span>
-							<input type="checkbox" className="accent-white" />
-						</label>
-
-						<label className="flex items-center justify-between">
-							<span className="text-white/80">Show ratings</span>
-							<input type="checkbox" className="accent-white" />
-						</label>
-
-						<label className="flex items-center justify-between">
-							<span className="text-white/80">
-								Autoplay trailers
-							</span>
-							<input type="checkbox" className="accent-white" />
-						</label>
-					</div>
-				</section>
-
-				{/* DIARY */}
-				<section className="bg-white/5 rounded-xl p-6">
-					<h2 className="text-lg font-medium mb-4">Diary</h2>
-
-					<div className="space-y-4">
-						<label className="flex items-center justify-between">
-							<span className="text-white/80">
-								Default status when adding
-							</span>
-							<select className="bg-black/30 border border-white/10 rounded-md px-3 py-2">
-								<option>Watching</option>
-								<option>Planned</option>
-								<option>Completed</option>
-							</select>
-						</label>
-
-						<label className="flex items-center justify-between">
-							<span className="text-white/80">
-								Enable diary reminders
-							</span>
-							<input type="checkbox" className="accent-white" />
-						</label>
-					</div>
-				</section>
-
-				{/* DANGER ZONE */}
-				<section className="bg-accent/10 border border-accent/20 rounded-xl p-6">
-					<h2 className="text-lg font-medium text-accent mb-4">
-						Danger zone
-					</h2>
-
-					<div className="flex items-center justify-between">
-						<span className="text-white/70">
-							Clear all diary entries
-						</span>
-						<button className="px-4 py-2 rounded-md bg-accent/20 text-accent hover:bg-accent-hover/30">
-							Clear
-						</button>
-					</div>
-				</section>
-
-				{/* SAVE */}
-				<div className="flex justify-end">
-					<button className="px-6 py-2 rounded-md bg-white text-black hover:bg-white/90">
-						Save changes
-					</button>
+					<h1 className="text-xl font-semibold">Settings</h1>
 				</div>
 			</div>
-		</main>
+
+			{/* PROFILE CARD */}
+			<div className="bg-surface rounded-3xl p-6 flex items-center justify-between border border-border shadow-lg">
+				<div className="flex items-center gap-4">
+					{/* Avatar */}
+					<div className="w-14 h-14 rounded-full bg-accent flex items-center justify-center text-white font-semibold text-lg">
+						JD
+					</div>
+
+					{/* Name + Email */}
+					<div>
+						<p className="font-semibold text-lg">John Doe</p>
+						<p className="text-muted text-sm">john@example.com</p>
+					</div>
+				</div>
+
+				<button className="text-accent text-sm font-medium hover:underline">
+					View Profile
+				</button>
+			</div>
+
+			{/* SETTINGS LIST */}
+			<div className="bg-surface rounded-3xl border border-border overflow-hidden shadow-lg">
+				{settings.map((item, index) => (
+					<Link key={index} href={item.route}>
+						<div
+							className={`flex items-center justify-between px-6 py-5 hover:bg-white/5 transition cursor-pointer ${
+								index !== settings.length - 1
+									? "border-b border-border"
+									: ""
+							}`}
+						>
+							{/* LEFT */}
+							<div className="flex items-center gap-4">
+								{/* ICON */}
+								<div
+									className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.color}`}
+								>
+									{item.icon}
+								</div>
+
+								{/* TEXT */}
+								<div>
+									<p
+										className={`font-medium ${
+											item.danger ? "text-red-500" : ""
+										}`}
+									>
+										{item.title}
+									</p>
+
+									<p className="text-sm text-muted">
+										{item.description}
+									</p>
+								</div>
+							</div>
+
+							{/* RIGHT CHEVRON */}
+							<ChevronRight size={18} className="text-muted" />
+						</div>
+					</Link>
+				))}
+			</div>
+		</div>
 	);
 }
