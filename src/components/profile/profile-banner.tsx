@@ -58,6 +58,7 @@ import { Camera } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
+import Image from "next/image";
 
 type Props = {
 	src?: string | null;
@@ -116,10 +117,11 @@ export default function ProfileBanner({ src, onChange }: Props) {
 
 	return (
 		<div className="relative w-full h-40 md:h-72 lg:h-80">
-			<img
+			<Image
 				src={previewSrc}
 				alt="Profile banner"
 				className="w-full h-full object-cover"
+				fill
 			/>
 
 			<button

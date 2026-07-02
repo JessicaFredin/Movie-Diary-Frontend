@@ -64,6 +64,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import { Camera } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import Image from "next/image";
 
 type Props = {
 	src?: string | null;
@@ -178,10 +179,12 @@ export default function ProfileAvatar({ src, onChange }: Props) {
 				<div className="relative w-24 h-24 rounded-full shadow-[0_0_15px_#FF414E]">
 					<div className="w-full h-full rounded-full overflow-hidden border-2 border-accent">
 						{previewSrc ? (
-							<img
+							<Image
 								src={previewSrc}
 								alt="Profile avatar"
-								className="w-full h-full object-cover"
+								width={100}
+								height={100}
+								className="object-cover w-full h-full "
 							/>
 						) : (
 							<div className="w-full h-full flex items-center justify-center bg-surface-elevated text-white font-bold text-xl">

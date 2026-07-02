@@ -578,10 +578,12 @@ export default function Navbar() {
 									className="w-9 h-9 rounded-full overflow-hidden cursor-pointer focus:outline-none border border-accent"
 								>
 									{avatarUrl ? (
-										<img
+										<Image
 											src={avatarUrl}
 											alt={displayName}
 											className="object-cover w-full h-full"
+											width={36}
+											height={36}
 										/>
 									) : (
 										<div className="flex h-full w-full items-center justify-center bg-surface-elevated text-sm font-bold text-white">
