@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Image from "next/image";
 import { WatchProvider } from "@/types";
 import { Search } from "lucide-react";
+import Image from "next/image";
 
 interface Props {
 	providers: WatchProvider[];
 	connected: WatchProvider[];
-	onToggle: (provider: WatchProvider) => void | Promise<void>;
+	onToggle: (provider: WatchProvider) => void;
 	onClose: () => void;
 }
 
@@ -23,16 +23,14 @@ export default function StreamingServicesModal({
 	const [search, setSearch] = useState("");
 	const [activeTab, setActiveTab] = useState<Tab>("all");
 	const [visible, setVisible] = useState(false);
-	const [savingProviderId, setSavingProviderId] = useState<number | null>(
-		null,
-	);
-
 	const modalRef = useRef<HTMLDivElement>(null);
 
+	/* Animate in */
 	useEffect(() => {
 		setVisible(true);
 	}, []);
 
+	/* ESC key close */
 	useEffect(() => {
 		const handleEsc = (e: KeyboardEvent) => {
 			if (e.key === "Escape") {
@@ -44,9 +42,9 @@ export default function StreamingServicesModal({
 		return () => document.removeEventListener("keydown", handleEsc);
 	}, []);
 
+	/* Prevent background scroll */
 	useEffect(() => {
 		document.body.style.overflow = "hidden";
-
 		return () => {
 			document.body.style.overflow = "auto";
 		};
@@ -57,18 +55,10 @@ export default function StreamingServicesModal({
 		setTimeout(onClose, 200);
 	};
 
+	/* Click outside */
 	const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
 		if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
 			handleClose();
-		}
-	};
-
-	const handleToggle = async (provider: WatchProvider) => {
-		try {
-			setSavingProviderId(provider.provider_id);
-			await onToggle(provider);
-		} finally {
-			setSavingProviderId(null);
 		}
 	};
 
@@ -104,13 +94,13 @@ export default function StreamingServicesModal({
 					visible ? "scale-100 opacity-100" : "scale-95 opacity-0"
 				}`}
 			>
+				{/* Header */}
 				<div className="px-6 py-4 border-b border-white/5 flex items-center justify-between">
 					<h2 className="text-base font-semibold text-white">
 						Streaming Services
 					</h2>
 
 					<button
-						type="button"
 						onClick={handleClose}
 						className="text-muted hover:text-white transition text-lg"
 					>
@@ -118,10 +108,11 @@ export default function StreamingServicesModal({
 					</button>
 				</div>
 
+				{/* Tabs + Search */}
 				<div className="px-6 pt-4 pb-3 space-y-3 border-b border-white/5">
+					{/* Tabs */}
 					<div className="flex gap-2">
 						<button
-							type="button"
 							onClick={() => setActiveTab("all")}
 							className={`px-3 py-1 text-xs rounded-full transition ${
 								activeTab === "all"
@@ -133,7 +124,6 @@ export default function StreamingServicesModal({
 						</button>
 
 						<button
-							type="button"
 							onClick={() => setActiveTab("connected")}
 							className={`px-3 py-1 text-xs rounded-full transition ${
 								activeTab === "connected"
@@ -145,6 +135,7 @@ export default function StreamingServicesModal({
 						</button>
 					</div>
 
+					{/* Search */}
 					<div className="relative">
 						<Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-2" />
 						<input
@@ -157,6 +148,7 @@ export default function StreamingServicesModal({
 					</div>
 				</div>
 
+				{/* List */}
 				<div className="max-h-[320px] overflow-y-auto px-5 py-4 space-y-2 custom-scrollbar">
 					{filteredProviders.length === 0 && (
 						<div className="text-center text-muted-2 text-xs py-10">
@@ -169,29 +161,20 @@ export default function StreamingServicesModal({
 							(c) => c.provider_id === provider.provider_id,
 						);
 
-						const isSaving =
-							savingProviderId === provider.provider_id;
-
 						return (
 							<div
 								key={provider.provider_id}
 								className="flex items-center justify-between p-3 rounded-xl bg-[#1a1a1a] hover:bg-[#202020] transition"
 							>
 								<div className="flex items-center gap-3">
-									<div className="relative w-8 h-8 bg-white rounded-lg flex items-center justify-center overflow-hidden">
-										{provider.logo_path ? (
-											<Image
-												src={`https://image.tmdb.org/t/p/w92${provider.logo_path}`}
-												alt={provider.provider_name}
-												width={24}
-												height={24}
-												className="object-contain"
-											/>
-										) : (
-											<span className="text-black text-xs font-bold">
-												?
-											</span>
-										)}
+									<div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center overflow-hidden">
+										<Image
+											src={`https://image.tmdb.org/t/p/w92${provider.logo_path}`}
+											alt={provider.provider_name}
+											width={24}
+											height={24}
+											className="object-contain"
+										/>
 									</div>
 
 									<span className="text-white text-sm">
@@ -200,20 +183,14 @@ export default function StreamingServicesModal({
 								</div>
 
 								<button
-									type="button"
-									disabled={isSaving}
-									onClick={() => handleToggle(provider)}
-									className={`px-3 py-1 text-xs rounded-full font-medium transition disabled:opacity-50 disabled:cursor-not-allowed ${
+									onClick={() => onToggle(provider)}
+									className={`px-3 py-1 text-xs rounded-full font-medium transition ${
 										isConnected
 											? "bg-green-600 text-white"
 											: "bg-accent text-white hover:bg-accent-hover"
 									}`}
 								>
-									{isSaving
-										? "..."
-										: isConnected
-											? "✓"
-											: "Connect"}
+									{isConnected ? "✓" : "Connect"}
 								</button>
 							</div>
 						);
