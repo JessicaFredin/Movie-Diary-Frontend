@@ -5,17 +5,71 @@ import Input from "../ui/input";
 import Button from "../ui/button";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebookF } from "react-icons/fa";
+import { createClient } from "@/lib/supabase/client";
+import Link from "next/link";
 
 export default function SignupForm() {
+	const supabase = createClient();
 	const [name, setName] = useState("");
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
-	const [remember, setRemember] = useState(false);
 
-	const handleSubmit = (e: React.FormEvent) => {
+	const [acceptedTerms, setAcceptedTerms] = useState(false);
+	const [loading, setLoading] = useState(false);
+	const [errorMessage, setErrorMessage] = useState("");
+	const [successMessage, setSuccessMessage] = useState("");
+
+	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		console.log("Signup:", { name, email, password, remember });
-		// Later: call API
+		setErrorMessage("");
+		setSuccessMessage("");
+
+		if (!acceptedTerms) {
+			setErrorMessage("You need to accept the Terms & Privacy.");
+			return;
+		}
+
+		setLoading(true);
+
+		const { error } = await supabase.auth.signUp({
+			email,
+			password,
+			options: {
+				data: {
+					full_name: name,
+				},
+				emailRedirectTo: `${window.location.origin}/auth/callback?next=/profile`,
+			},
+		});
+
+		setLoading(false);
+
+		if (error) {
+			setErrorMessage(error.message);
+			return;
+		}
+
+		setSuccessMessage(
+			"Account created. Check your email to confirm your account.",
+		);
+	};
+
+	const signUpWithGoogle = async () => {
+		await supabase.auth.signInWithOAuth({
+			provider: "google",
+			options: {
+				redirectTo: `${window.location.origin}/auth/callback?next=/profile`,
+			},
+		});
+	};
+
+	const signUpWithFacebook = async () => {
+		await supabase.auth.signInWithOAuth({
+			provider: "facebook",
+			options: {
+				redirectTo: `${window.location.origin}/auth/callback?next=/profile`,
+			},
+		});
 	};
 
 	return (
@@ -26,6 +80,14 @@ export default function SignupForm() {
 			<h2 className="text-2xl font-semibold text-white">
 				Let’s get started
 			</h2>
+
+			{errorMessage && (
+				<p className="text-sm text-red-400">{errorMessage}</p>
+			)}
+
+			{successMessage && (
+				<p className="text-sm text-green-400">{successMessage}</p>
+			)}
 
 			<Input
 				label="Full Name"
@@ -54,8 +116,8 @@ export default function SignupForm() {
 			<div className="flex items-center gap-2 text-sm">
 				<input
 					type="checkbox"
-					checked={remember}
-					onChange={(e) => setRemember(e.target.checked)}
+					checked={acceptedTerms}
+					onChange={(e) => setAcceptedTerms(e.target.checked)}
 					className="accent-accent w-4 h-4"
 				/>
 				<span className="text-muted">
@@ -63,24 +125,28 @@ export default function SignupForm() {
 				</span>
 			</div>
 
-			<Button type="submit" variant="primary">
-				Create Account
+			<Button type="submit" variant="primary" disabled={loading}>
+				{loading ? "Creating account..." : "Create Account"}
 			</Button>
 
-			<Button type="button" variant="google">
+			<Button type="button" variant="google" onClick={signUpWithGoogle}>
 				<FcGoogle size={20} /> Sign up with Google
 			</Button>
 
-			<Button type="button" variant="facebook">
+			<Button
+				type="button"
+				variant="facebook"
+				onClick={signUpWithFacebook}
+			>
 				<FaFacebookF size={20} className="text-blue-500" /> Sign up with
 				Facebook
 			</Button>
 
 			<p className="text-sm text-muted text-center">
 				Already have an account?{" "}
-				<a href="/login" className="text-white hover:underline">
+				<Link href="/login" className="text-white hover:underline">
 					Login
-				</a>
+				</Link>
 			</p>
 		</form>
 	);
