@@ -522,8 +522,9 @@ export default function Navbar() {
 					<Image
 						src="/logo.png"
 						alt="Movie Diary Logo"
-						width={40}
-						height={40}
+						width={2000}
+						height={1000}
+						className="w-[100px] h-auto"
 						priority
 					/>
 				</Link>
