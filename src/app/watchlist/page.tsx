@@ -241,8 +241,6 @@ export default function WatchlistPage() {
 			{view === "grid" && (
 				<MovieGrid
 					items={filteredItems}
-					onDelete={handleRemove}
-					onAdd={(entry) => setSelected(entry)}
 				/>
 			)}
 

@@ -4,25 +4,14 @@ import { useState } from "react";
 import useSWRInfinite from "swr/infinite";
 
 import Row from "@/components/home/row";
-import MovieCard from "@/components/home/movie-card";
 import Filter from "@/components/home/filter";
 import SearchBar from "@/components/home/search-bar";
 import HeroCarousel from "@/components/home/hero-carousel";
+import MovieCardSkeleton from "@/components/home/movie-card-skeleton";
+import MediaCard from "@/components/media/media-card";
 
 import { fetcher } from "@/utils/fetcher";
-import { Movie, TvShow, TMDBListResponse } from "@/types";
-import MovieCardSkeleton from "@/components/home/movie-card-skeleton";
-import AddToDiaryModal from "@/components/diary/add-to-diary-modal";
-
-/* ---------------- TYPES ---------------- */
-
-type SelectedItem = {
-	id: number;
-	type: "movie" | "tv";
-	title: string;
-	poster: string;
-	backdrop: string;
-};
+import type { Movie, TvShow, TMDBListResponse } from "@/types";
 
 /* ---------------- KEYS ---------------- */
 
@@ -57,17 +46,50 @@ const getSearchKey = (
 	return `/api/tmdb/search?query=${encodeURIComponent(query)}&page=${pageIndex + 1}`;
 };
 
+/* ---------------- HELPERS ---------------- */
+
+function dedupeByMediaAndId<T extends { id: number; media_type?: string }>(
+	items: T[],
+) {
+	const map = new Map<string, T>();
+
+	for (const item of items) {
+		if (!item?.id) continue;
+
+		const type = item.media_type ?? ("title" in item ? "movie" : "tv");
+		const key = `${type}-${item.id}`;
+
+		map.set(key, item);
+	}
+
+	return Array.from(map.values());
+}
+
+function getSearchItemType(item: Movie | TvShow): "movie" | "tv" | null {
+	if (item.media_type === "movie") return "movie";
+	if (item.media_type === "tv") return "tv";
+
+	if ("title" in item) return "movie";
+	if ("name" in item) return "tv";
+
+	return null;
+}
+
+// function getSearchItemTitle(item: Movie | TvShow, type: "movie" | "tv") {
+// 	return type === "movie" ? item.title : item.name;
+// }
+
+function getSearchItemTitle(item: Movie | TvShow) {
+	if ("title" in item) return item.title;
+	if ("name" in item) return item.name;
+
+	return "Untitled";
+}
+
 /* ---------------- PAGE ---------------- */
 
 export default function HomePage() {
 	const [searchQuery, setSearchQuery] = useState("");
-	const [addModalOpen, setAddModalOpen] = useState(false);
-	const [selectedItem, setSelectedItem] = useState<SelectedItem | null>(null);
-
-	function handleAddToDiary(item: SelectedItem) {
-		setSelectedItem(item);
-		setAddModalOpen(true);
-	}
 
 	/* ---------- SEARCH ---------- */
 
@@ -129,22 +151,6 @@ export default function HomePage() {
 		tvPages?.flatMap((p) => p.results) ?? [],
 	);
 
-	function dedupeByMediaAndId<T extends { id: number; media_type?: string }>(
-		items: T[],
-	) {
-		const map = new Map<string, T>();
-
-		for (const item of items) {
-			if (!item?.id) continue;
-			const key = `${item.media_type ?? "movie"}-${item.id}`;
-			map.set(key, item);
-		}
-
-		return Array.from(map.values());
-	}
-
-	/* ---------- RENDER ---------- */
-
 	return (
 		<main>
 			{/* HERO ONLY WHEN NOT SEARCHING */}
@@ -167,32 +173,35 @@ export default function HomePage() {
 
 						<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
 							{searchResults.map((item) => {
+								const mediaType = getSearchItemType(item);
+
 								if (
-									!item?.id ||
-									!item.media_type ||
-									!item.poster_path ||
-									!item.backdrop_path
-								)
+									!mediaType ||
+									!item.id ||
+									!item.poster_path
+								) {
 									return null;
+								}
 
 								return (
-									<MovieCard
-										key={`${item.media_type}-${item.id}`}
+									<MediaCard
+										key={`${mediaType}-${item.id}`}
 										id={item.id}
-										title={
-											item.media_type === "movie"
-												? item.title
-												: item.name
-										}
+										type={mediaType}
+										title={getSearchItemTitle(
+											item
+										)}
 										posterPath={item.poster_path}
-										backdropPath={item.backdrop_path}
+										backdropPath={
+											item.backdrop_path ??
+											item.poster_path
+										}
 										rating={item.vote_average}
-										type={item.media_type}
-										onAdd={handleAddToDiary}
+										variant="row"
 									/>
 								);
 							})}
-							{/* SKELETONS WHILE FETCHING MORE */}
+
 							{searchValidating &&
 								Array.from({ length: 12 }).map((_, i) => (
 									<MovieCardSkeleton
@@ -204,6 +213,7 @@ export default function HomePage() {
 						{searchResults.length > 0 && (
 							<div className="flex justify-center mt-8">
 								<button
+									type="button"
 									onClick={() =>
 										setSearchSize(searchSize + 1)
 									}
@@ -227,22 +237,35 @@ export default function HomePage() {
 							}
 							isLoadingMore={trendingValidating}
 						>
-							{trendingItems.map((item) => (
-								<MovieCard
-									key={`${item.media_type}-${item.id}`}
-									id={item.id}
-									title={
-										item.media_type === "movie"
-											? item.title
-											: item.name
-									}
-									posterPath={item.poster_path}
-									backdropPath={item.backdrop_path}
-									rating={item.vote_average}
-									type={item.media_type}
-									onAdd={handleAddToDiary}
-								/>
-							))}
+							{trendingItems.map((item) => {
+								const mediaType = getSearchItemType(item);
+
+								if (
+									!mediaType ||
+									!item.id ||
+									!item.poster_path
+								) {
+									return null;
+								}
+
+								return (
+									<MediaCard
+										key={`${mediaType}-${item.id}`}
+										id={item.id}
+										type={mediaType}
+										title={getSearchItemTitle(
+											item,
+										)}
+										posterPath={item.poster_path}
+										backdropPath={
+											item.backdrop_path ??
+											item.poster_path
+										}
+										rating={item.vote_average}
+										variant="row"
+									/>
+								);
+							})}
 						</Row>
 
 						<Row
@@ -253,18 +276,27 @@ export default function HomePage() {
 							}
 							isLoadingMore={moviesValidating}
 						>
-							{popularMovies.map((movie) => (
-								<MovieCard
-									key={movie.id}
-									id={movie.id}
-									title={movie.title}
-									posterPath={movie.poster_path}
-									backdropPath={movie.backdrop_path}
-									rating={movie.vote_average}
-									type="movie"
-									onAdd={handleAddToDiary}
-								/>
-							))}
+							{popularMovies.map((movie) => {
+								if (!movie.id || !movie.poster_path) {
+									return null;
+								}
+
+								return (
+									<MediaCard
+										key={movie.id}
+										id={movie.id}
+										type="movie"
+										title={movie.title}
+										posterPath={movie.poster_path}
+										backdropPath={
+											movie.backdrop_path ??
+											movie.poster_path
+										}
+										rating={movie.vote_average}
+										variant="row"
+									/>
+								);
+							})}
 						</Row>
 
 						<Row
@@ -274,30 +306,30 @@ export default function HomePage() {
 							}
 							isLoadingMore={tvValidating}
 						>
-							{popularTvShows.map((tv) => (
-								<MovieCard
-									key={tv.id}
-									id={tv.id}
-									title={tv.name}
-									posterPath={tv.poster_path}
-									backdropPath={tv.backdrop_path}
-									rating={tv.vote_average}
-									type="tv"
-									onAdd={handleAddToDiary}
-								/>
-							))}
+							{popularTvShows.map((tv) => {
+								if (!tv.id || !tv.poster_path) {
+									return null;
+								}
+
+								return (
+									<MediaCard
+										key={tv.id}
+										id={tv.id}
+										type="tv"
+										title={tv.name}
+										posterPath={tv.poster_path}
+										backdropPath={
+											tv.backdrop_path ?? tv.poster_path
+										}
+										rating={tv.vote_average}
+										variant="row"
+									/>
+								);
+							})}
 						</Row>
 					</>
 				)}
 			</div>
-
-			{selectedItem && (
-				<AddToDiaryModal
-					open={addModalOpen}
-					onClose={() => setAddModalOpen(false)}
-					content={selectedItem}
-				/>
-			)}
 		</main>
 	);
 }

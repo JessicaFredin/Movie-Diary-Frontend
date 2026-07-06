@@ -157,61 +157,111 @@ export default function AddToDiaryModal({
 	/* -------------------------------
 	   SAVE (ADD OR EDIT)
 	--------------------------------*/
-	function handleSave() {
-		let progress = undefined;
+	// function handleSave() {
+	// 	let progress = undefined;
 
-		// if (
-		// 	content.type === "tv" &&
-		// 	tvDetails?.seasons &&
-		// 	status !== "planned"
-		// ) {
-		// 	progress = calculateTvProgress(tvDetails.seasons, season, episode);
-		// }
+	// 	// if (
+	// 	// 	content.type === "tv" &&
+	// 	// 	tvDetails?.seasons &&
+	// 	// 	status !== "planned"
+	// 	// ) {
+	// 	// 	progress = calculateTvProgress(tvDetails.seasons, season, episode);
+	// 	// }
 
-		if (
-			content.type === "tv" &&
-			tvDetails?.seasons &&
-			status !== "planned"
-		) {
-			if (status === "completed") {
-				const lastSeason =
-					tvDetails.seasons[tvDetails.seasons.length - 1];
+	// 	if (
+	// 		content.type === "tv" &&
+	// 		tvDetails?.seasons &&
+	// 		status !== "planned"
+	// 	) {
+	// 		if (status === "completed") {
+	// 			const lastSeason =
+	// 				tvDetails.seasons[tvDetails.seasons.length - 1];
 
-				progress = calculateTvProgress(
-					tvDetails.seasons,
-					lastSeason.season_number,
-					lastSeason.episode_count,
-				);
-			} else {
-				progress = calculateTvProgress(
-					tvDetails.seasons,
-					season,
-					episode,
-				);
+	// 			progress = calculateTvProgress(
+	// 				tvDetails.seasons,
+	// 				lastSeason.season_number,
+	// 				lastSeason.episode_count,
+	// 			);
+	// 		} else {
+	// 			progress = calculateTvProgress(
+	// 				tvDetails.seasons,
+	// 				season,
+	// 				episode,
+	// 			);
+	// 		}
+	// 	}
+
+	// 	const entry: DiaryEntry = {
+	// 		id: content.id,
+	// 		type: content.type,
+	// 		title: content.title,
+	// 		poster: content.poster,
+	// 		backdrop: content.backdrop,
+	// 		status,
+	// 		progress,
+	// 		rating,
+	// 		updatedAt: new Date().toISOString(),
+	// 	};
+
+	// 	// If Planned send to watchlist otherwise to diary
+	// 	if (status === "planned") {
+	// 		addToWatchlist(entry);
+	// 	} else {
+	// 		updateDiaryEntry(entry);
+	// 	}
+
+	// 	onSave?.(status);
+	// 	onClose();
+	// }
+
+	async function handleSave() {
+		try {
+			let progress = undefined;
+
+			if (
+				content.type === "tv" &&
+				tvDetails?.seasons &&
+				status !== "planned"
+			) {
+				if (status === "completed") {
+					const lastSeason =
+						tvDetails.seasons[tvDetails.seasons.length - 1];
+
+					progress = calculateTvProgress(
+						tvDetails.seasons,
+						lastSeason.season_number,
+						lastSeason.episode_count,
+					);
+				} else {
+					progress = calculateTvProgress(
+						tvDetails.seasons,
+						season,
+						episode,
+					);
+				}
 			}
+
+			const entry: DiaryEntry = {
+				id: content.id,
+				type: content.type,
+				title: content.title,
+				poster: content.poster,
+				backdrop: content.backdrop,
+				status,
+				progress,
+				rating,
+				updatedAt: new Date().toISOString(),
+			};
+
+			await updateDiaryEntry(entry);
+			await onSave?.(status);
+			onClose();
+		} catch (error) {
+			console.error(error);
+			alert(
+				"You need to log in first, or something went wrong while saving.",
+			);
 		}
-
-		const entry: DiaryEntry = {
-			id: content.id,
-			type: content.type,
-			title: content.title,
-			poster: content.poster,
-			backdrop: content.backdrop,
-			status,
-			progress,
-			rating,
-			updatedAt: new Date().toISOString(),
-		};
-
-		// If Planned send to watchlist otherwise to diary
-		if (status === "planned") {
-			addToWatchlist(entry);
-		} else {
-			updateDiaryEntry(entry);
-		}
-
-		onSave?.(status);
-		onClose();
 	}
 
 	// function handleSave() {

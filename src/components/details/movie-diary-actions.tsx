@@ -1,11 +1,113 @@
+// "use client";
+
+// import { useEffect, useState } from "react";
+// import AddToDiaryButton from "@/components/diary/add-to-diary-button";
+// import AddToDiaryModal from "@/components/diary/add-to-diary-modal";
+// import { getDiary, removeDiaryEntry } from "@/utils/diary-storage";
+// import { isInDiary } from "@/utils/is-in-diary";
+// import { DiaryEntry } from "@/types/diary";
+// import { Pencil, Trash2 } from "lucide-react";
+
+// type Props = {
+// 	id: number;
+// 	title: string;
+// 	poster: string;
+// 	backdrop: string;
+// };
+
+// export default function MovieDiaryActions({
+// 	id,
+// 	title,
+// 	poster,
+// 	backdrop,
+// }: Props) {
+// 	const [open, setOpen] = useState(false);
+// 	const alreadyAdded = isInDiary(id, "movie");
+// 	const [selectedEntry, setSelectedEntry] = useState<DiaryEntry | null>(null);
+// 	const [refresh, setRefresh] = useState(false);
+
+// 	/* --------------------------
+// 	   Load entry when editing
+// 	---------------------------*/
+// 	useEffect(() => {
+// 		if (!alreadyAdded) return;
+
+// 		const entry = getDiary().find((e) => e.id === id && e.type === "movie");
+
+// 		if (entry) {
+// 			setSelectedEntry(entry);
+// 		}
+// 	}, [alreadyAdded, id, refresh]);
+
+// 	/* --------------------------
+// 	   DELETE
+// 	---------------------------*/
+// 	function handleDelete() {
+// 		removeDiaryEntry(id, "movie");
+// 		setRefresh((v) => !v);
+// 	}
+
+// 	return (
+// 		<>
+// 			{/* NOT ADDED → SHOW ADD BUTTON */}
+// 			{!alreadyAdded && (
+// 				<AddToDiaryButton
+// 					variant="pill"
+// 					isAdded={false}
+// 					onClick={() => setOpen(true)}
+// 				/>
+// 			)}
+
+// 			{/* ADDED → SHOW EDIT + DELETE */}
+// 			{alreadyAdded && (
+// 				<div className="flex gap-3">
+// 					<button
+// 						onClick={() => setOpen(true)}
+// 						className="flex items-center justify-center gap-2 rounded-full bg-surface-elevated hover:bg-surface-neutral px-4 py-2 text-sm transition"
+// 					>
+// 						<Pencil className="w-4 h-4" />
+// 						Edit
+// 					</button>
+
+// 					<button
+// 						onClick={handleDelete}
+// 						className="flex items-center justify-center gap-2 rounded-full border border-accent text-accent hover:bg-accent hover:text-white px-4 py-2 text-sm transition"
+// 					>
+// 						<Trash2 className="w-4 h-4" />
+// 						Delete
+// 					</button>
+// 				</div>
+// 			)}
+
+// 			{/* MODAL */}
+// 			{open && (
+// 				<AddToDiaryModal
+// 					open={open}
+// 					onClose={() => {
+// 						setOpen(false);
+// 						setRefresh((v) => !v);
+// 					}}
+// 					content={{
+// 						id,
+// 						type: "movie",
+// 						title,
+// 						poster,
+// 						backdrop,
+// 					}}
+// 					initialData={selectedEntry ?? undefined}
+// 				/>
+// 			)}
+// 		</>
+// 	);
+// }
+
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import AddToDiaryButton from "@/components/diary/add-to-diary-button";
 import AddToDiaryModal from "@/components/diary/add-to-diary-modal";
 import { getDiary, removeDiaryEntry } from "@/utils/diary-storage";
-import { isInDiary } from "@/utils/is-in-diary";
-import { DiaryEntry } from "@/types/diary";
+import type { DiaryEntry } from "@/types/diary";
 import { Pencil, Trash2 } from "lucide-react";
 
 type Props = {
@@ -22,34 +124,49 @@ export default function MovieDiaryActions({
 	backdrop,
 }: Props) {
 	const [open, setOpen] = useState(false);
-	const alreadyAdded = isInDiary(id, "movie");
+	const [alreadyAdded, setAlreadyAdded] = useState(false);
 	const [selectedEntry, setSelectedEntry] = useState<DiaryEntry | null>(null);
-	const [refresh, setRefresh] = useState(false);
+	const [loading, setLoading] = useState(true);
 
-	/* --------------------------
-	   Load entry when editing
-	---------------------------*/
-	useEffect(() => {
-		if (!alreadyAdded) return;
+	const loadEntry = useCallback(async () => {
+		setLoading(true);
 
-		const entry = getDiary().find((e) => e.id === id && e.type === "movie");
+		try {
+			const diary = await getDiary();
 
-		if (entry) {
-			setSelectedEntry(entry);
+			const entry = diary.find(
+				(item) => item.id === id && item.type === "movie",
+			);
+
+			setAlreadyAdded(Boolean(entry));
+			setSelectedEntry(entry ?? null);
+		} catch (error) {
+			console.error("Failed to load movie diary entry:", error);
+			setAlreadyAdded(false);
+			setSelectedEntry(null);
+		} finally {
+			setLoading(false);
 		}
-	}, [alreadyAdded, id, refresh]);
+	}, [id]);
 
-	/* --------------------------
-	   DELETE
-	---------------------------*/
-	function handleDelete() {
-		removeDiaryEntry(id, "movie");
-		setRefresh((v) => !v);
+	useEffect(() => {
+		loadEntry();
+	}, [loadEntry]);
+
+	async function handleDelete() {
+		try {
+			await removeDiaryEntry(id, "movie");
+			await loadEntry();
+		} catch (error) {
+			console.error("Failed to delete movie diary entry:", error);
+			alert("Could not delete this from your diary.");
+		}
 	}
+
+	if (loading) return null;
 
 	return (
 		<>
-			{/* NOT ADDED → SHOW ADD BUTTON */}
 			{!alreadyAdded && (
 				<AddToDiaryButton
 					variant="pill"
@@ -58,10 +175,10 @@ export default function MovieDiaryActions({
 				/>
 			)}
 
-			{/* ADDED → SHOW EDIT + DELETE */}
 			{alreadyAdded && (
 				<div className="flex gap-3">
 					<button
+						type="button"
 						onClick={() => setOpen(true)}
 						className="flex items-center justify-center gap-2 rounded-full bg-surface-elevated hover:bg-surface-neutral px-4 py-2 text-sm transition"
 					>
@@ -70,6 +187,7 @@ export default function MovieDiaryActions({
 					</button>
 
 					<button
+						type="button"
 						onClick={handleDelete}
 						className="flex items-center justify-center gap-2 rounded-full border border-accent text-accent hover:bg-accent hover:text-white px-4 py-2 text-sm transition"
 					>
@@ -79,13 +197,12 @@ export default function MovieDiaryActions({
 				</div>
 			)}
 
-			{/* MODAL */}
 			{open && (
 				<AddToDiaryModal
 					open={open}
-					onClose={() => {
+					onClose={async () => {
 						setOpen(false);
-						setRefresh((v) => !v);
+						await loadEntry();
 					}}
 					content={{
 						id,

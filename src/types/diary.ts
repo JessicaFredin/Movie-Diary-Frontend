@@ -20,6 +20,7 @@ export type DiaryEntry = {
 	watched?: boolean;
 
 	rating?: number | null;
+	review?: string | null;
 
 	updatedAt: string;
 
