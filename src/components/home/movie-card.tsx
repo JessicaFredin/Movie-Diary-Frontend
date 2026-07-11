@@ -478,9 +478,31 @@ export default function MovieCard({
 
 	const [alreadyAdded, setAlreadyAdded] = useState(false);
 
-	useEffect(() => {
-		setAlreadyAdded(isInDiary(id, type));
-	}, [id, type]);
+useEffect(() => {
+	let cancelled = false;
+
+	async function checkDiaryStatus() {
+		try {
+			const added = await isInDiary(id, type);
+
+			if (!cancelled) {
+				setAlreadyAdded(added);
+			}
+		} catch (error) {
+			console.error("Failed to check diary status:", error);
+
+			if (!cancelled) {
+				setAlreadyAdded(false);
+			}
+		}
+	}
+
+	checkDiaryStatus();
+
+	return () => {
+		cancelled = true;
+	};
+}, [id, type]);
 
 	const handleNavigate = () => {
 		router.push(`/${type}/${id}`);
