@@ -8,6 +8,7 @@ import AddToDiaryModal from "@/components/diary/add-to-diary-modal";
 import MediaToolbar from "@/components/diary/media-toolbar";
 import { getPosterUrl } from "@/utils/tmdb-image";
 import { Trash2, Plus } from "lucide-react";
+import MediaCard from "@/components/media/media-card";
 
 const GENRES = [
 	"Action",
@@ -42,14 +43,21 @@ export default function WatchlistPage() {
 	const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
 	const [selectedServices, setSelectedServices] = useState<string[]>([]);
 
+
 	useEffect(() => {
-		setItems(getWatchlist());
+		async function loadWatchlist() {
+			const list = await getWatchlist();
+			setItems(list);
+		}
+
+		loadWatchlist();
 	}, []);
 
-	function handleRemove(entry: DiaryEntry) {
-		removeFromWatchlist(entry.id, entry.type);
-		setItems(getWatchlist());
-	}
+async function handleRemove(entry: DiaryEntry) {
+	await removeFromWatchlist(entry.id, entry.type);
+	const list = await getWatchlist();
+	setItems(list);
+}
 
     
 	/* -------------------------
@@ -235,15 +243,30 @@ export default function WatchlistPage() {
 						</div>
 					</div>
 				</div>
-            )}
-            
+			)}
+
 			{/* GRID VIEW */}
 			{view === "grid" && (
-				<MovieGrid
-					items={filteredItems}
-					onDelete={handleRemove}
-					onAdd={(entry) => setSelected(entry)}
-				/>
+				<div className="relative z-10 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-6">
+					{filteredItems.map((item) => (
+						<MediaCard
+							key={`${item.type}-${item.id}`}
+							id={item.id}
+							type={item.type}
+							title={item.title}
+							posterPath={item.poster}
+							backdropPath={item.backdrop ?? item.poster}
+							rating={item.rating}
+							variant="watchlist"
+							onWatchlistRemove={() => handleRemove(item)}
+							onWatchlistSave={(status) => {
+								if (status !== "planned") {
+									handleRemove(item);
+								}
+							}}
+						/>
+					))}
+				</div>
 			)}
 
 			{/* LIST VIEW */}

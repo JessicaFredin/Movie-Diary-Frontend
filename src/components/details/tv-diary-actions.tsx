@@ -1,12 +1,225 @@
+// // "use client";
+
+// // import { useEffect, useState } from "react";
+// // import AddToDiaryButton from "@/components/diary/add-to-diary-button";
+// // import AddToDiaryModal from "@/components/diary/add-to-diary-modal";
+// // import { getDiary, removeDiaryEntry } from "@/utils/diary-storage";
+// // import { isInDiary } from "@/utils/is-in-diary";
+// // import { DiaryEntry } from "@/types/diary";
+// // import { Pencil, Trash2 } from "lucide-react";
+
+// // type Props = {
+// // 	id: number;
+// // 	title: string;
+// // 	poster: string;
+// // 	backdrop: string;
+// // };
+
+// // export default function TvDiaryActions({ id, title, poster, backdrop }: Props) {
+// // 	const [open, setOpen] = useState(false);
+// // 	const alreadyAdded = isInDiary(id, "tv");
+// // 	const [selectedEntry, setSelectedEntry] = useState<DiaryEntry | null>(null);
+// // 	const [refresh, setRefresh] = useState(false);
+
+// // 	/* --------------------------
+// // 	   Load entry when editing
+// // 	---------------------------*/
+// // 	useEffect(() => {
+// // 		if (!alreadyAdded) return;
+
+// // 		const entry = getDiary().find((e) => e.id === id && e.type === "tv");
+
+// // 		if (entry) {
+// // 			setSelectedEntry(entry);
+// // 		}
+// // 	}, [alreadyAdded, id, refresh]);
+
+// // 	/* --------------------------
+// // 	   DELETE
+// // 	---------------------------*/
+// // 	function handleDelete() {
+// // 		removeDiaryEntry(id, "tv");
+// // 		setRefresh((v) => !v);
+// // 	}
+
+// // 	return (
+// // 		<>
+// // 			{/* NOT ADDED → SHOW ADD BUTTON */}
+// // 			{!alreadyAdded && (
+// // 				<AddToDiaryButton
+// // 					variant="pill"
+// // 					isAdded={false}
+// // 					onClick={() => setOpen(true)}
+// // 				/>
+// // 			)}
+
+// // 			{/* ADDED → SHOW EDIT + DELETE */}
+// // 			{alreadyAdded && (
+// // 				<div className="flex gap-3">
+// // 					<button
+// // 						onClick={() => setOpen(true)}
+// // 						className="flex items-center justify-center gap-2 rounded-full bg-surface-elevated hover:bg-surface-neutral px-4 py-2 text-sm transition"
+// // 					>
+// // 						<Pencil className="w-4 h-4" />
+// // 						Edit
+// // 					</button>
+
+// // 					<button
+// // 						onClick={handleDelete}
+// // 						className="flex items-center justify-center gap-2 rounded-full border border-accent text-accent hover:bg-accent hover:text-white px-4 py-2 text-sm transition"
+// // 					>
+// // 						<Trash2 className="w-4 h-4" />
+// // 						Delete
+// // 					</button>
+// // 				</div>
+// //             )}
+
+// //             {/* MODAL */}
+// // 			{open && (
+// // 				<AddToDiaryModal
+// // 					open={open}
+// // 					onClose={() => {
+// // 						setOpen(false);
+// // 						setRefresh((v) => !v);
+// // 					}}
+// // 					content={{
+// // 						id,
+// // 						type: "tv",
+// // 						title,
+// // 						poster,
+// // 						backdrop,
+// // 					}}
+// // 					initialData={selectedEntry ?? undefined}
+// // 				/>
+// // 			)}
+// // 		</>
+// // 	);
+// // }
+
+// "use client";
+
+// import { useCallback, useEffect, useState } from "react";
+// import AddToDiaryButton from "@/components/diary/add-to-diary-button";
+// import AddToDiaryModal from "@/components/diary/add-to-diary-modal";
+// import { getDiary, removeDiaryEntry } from "@/utils/diary-storage";
+// import type { DiaryEntry } from "@/types/diary";
+// import { Pencil, Trash2 } from "lucide-react";
+
+// type Props = {
+// 	id: number;
+// 	title: string;
+// 	poster: string;
+// 	backdrop: string;
+// };
+
+// export default function TvDiaryActions({ id, title, poster, backdrop }: Props) {
+// 	const [open, setOpen] = useState(false);
+// 	const [alreadyAdded, setAlreadyAdded] = useState(false);
+// 	const [selectedEntry, setSelectedEntry] = useState<DiaryEntry | null>(null);
+// 	const [loading, setLoading] = useState(true);
+
+// 	const loadEntry = useCallback(async () => {
+// 		setLoading(true);
+
+// 		try {
+// 			const diary = await getDiary();
+
+// 			const entry = diary.find(
+// 				(item) => item.id === id && item.type === "tv",
+// 			);
+
+// 			setAlreadyAdded(Boolean(entry));
+// 			setSelectedEntry(entry ?? null);
+// 		} catch (error) {
+// 			console.error("Failed to load TV diary entry:", error);
+// 			setAlreadyAdded(false);
+// 			setSelectedEntry(null);
+// 		} finally {
+// 			setLoading(false);
+// 		}
+// 	}, [id]);
+
+// 	useEffect(() => {
+// 		loadEntry();
+// 	}, [loadEntry]);
+
+// 	async function handleDelete() {
+// 		try {
+// 			await removeDiaryEntry(id, "tv");
+// 			await loadEntry();
+// 		} catch (error) {
+// 			console.error("Failed to delete TV diary entry:", error);
+// 			alert("Could not delete this from your diary.");
+// 		}
+// 	}
+
+// 	if (loading) return null;
+
+// 	return (
+// 		<>
+// 			{!alreadyAdded && (
+// 				<AddToDiaryButton
+// 					variant="pill"
+// 					isAdded={false}
+// 					onClick={() => setOpen(true)}
+// 				/>
+// 			)}
+
+// 			{alreadyAdded && (
+// 				<div className="flex gap-3">
+// 					<button
+// 						type="button"
+// 						onClick={() => setOpen(true)}
+// 						className="flex items-center justify-center gap-2 rounded-full bg-surface-elevated hover:bg-surface-neutral px-4 py-2 text-sm transition"
+// 					>
+// 						<Pencil className="w-4 h-4" />
+// 						Edit
+// 					</button>
+
+// 					<button
+// 						type="button"
+// 						onClick={handleDelete}
+// 						className="flex items-center justify-center gap-2 rounded-full border border-accent text-accent hover:bg-accent hover:text-white px-4 py-2 text-sm transition"
+// 					>
+// 						<Trash2 className="w-4 h-4" />
+// 						Delete
+// 					</button>
+// 				</div>
+// 			)}
+
+// 			{open && (
+// 				<AddToDiaryModal
+// 					open={open}
+// 					onClose={async () => {
+// 						setOpen(false);
+// 						await loadEntry();
+// 					}}
+// 					content={{
+// 						id,
+// 						type: "tv",
+// 						title,
+// 						poster,
+// 						backdrop,
+// 					}}
+// 					initialData={selectedEntry ?? undefined}
+// 				/>
+// 			)}
+// 		</>
+// 	);
+// }
+
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import AddToDiaryButton from "@/components/diary/add-to-diary-button";
 import AddToDiaryModal from "@/components/diary/add-to-diary-modal";
+import ConfirmDialog from "@/components/ui/confirm-dialog";
 import { getDiary, removeDiaryEntry } from "@/utils/diary-storage";
-import { isInDiary } from "@/utils/is-in-diary";
-import { DiaryEntry } from "@/types/diary";
-import { Pencil, Trash2 } from "lucide-react";
+import { getWatchlist, removeFromWatchlist } from "@/utils/watchlist-storage";
+import type { DiaryEntry } from "@/types/diary";
+import { CheckCircle2, Pencil, Plus, Trash2, PlayCircle } from "lucide-react";
+
+type Status = "watching" | "completed" | "planned";
 
 type Props = {
 	id: number;
@@ -15,37 +228,147 @@ type Props = {
 	backdrop: string;
 };
 
+type ProgressShape = {
+	currentSeason?: number;
+	currentEpisode?: number;
+	percentage?: number;
+	progress?: number;
+};
+
+function getProgress(entry: DiaryEntry | null): ProgressShape | null {
+	if (!entry?.progress) return null;
+	return entry.progress as ProgressShape;
+}
+
+function getProgressPercentage(entry: DiaryEntry | null) {
+	const progress = getProgress(entry);
+	const percentage = progress?.percentage ?? progress?.progress;
+
+	if (typeof percentage !== "number") return null;
+
+	return Math.min(100, Math.max(0, Math.round(percentage)));
+}
+
+function getEpisodeLabel(entry: DiaryEntry | null) {
+	const progress = getProgress(entry);
+
+	if (!progress?.currentSeason || !progress?.currentEpisode) return null;
+
+	return `Season ${progress.currentSeason}, Episode ${progress.currentEpisode}`;
+}
+
 export default function TvDiaryActions({ id, title, poster, backdrop }: Props) {
 	const [open, setOpen] = useState(false);
-	const alreadyAdded = isInDiary(id, "tv");
+	const [confirmOpen, setConfirmOpen] = useState(false);
+
+	const [alreadyAdded, setAlreadyAdded] = useState(false);
+	const [inWatchlist, setInWatchlist] = useState(false);
+
 	const [selectedEntry, setSelectedEntry] = useState<DiaryEntry | null>(null);
-	const [refresh, setRefresh] = useState(false);
+	const [watchlistEntry, setWatchlistEntry] = useState<DiaryEntry | null>(
+		null,
+	);
 
-	/* --------------------------
-	   Load entry when editing
-	---------------------------*/
-	useEffect(() => {
-		if (!alreadyAdded) return;
+	const [loading, setLoading] = useState(true);
+	const [deleting, setDeleting] = useState(false);
 
-		const entry = getDiary().find((e) => e.id === id && e.type === "tv");
+	const loadEntry = useCallback(async () => {
+		setLoading(true);
 
-		if (entry) {
-			setSelectedEntry(entry);
+		try {
+			const diary = await getDiary();
+
+			const diaryEntry =
+				diary.find((item) => item.id === id && item.type === "tv") ??
+				null;
+
+			setAlreadyAdded(Boolean(diaryEntry));
+			setSelectedEntry(diaryEntry);
+
+			if (diaryEntry) {
+				setInWatchlist(false);
+				setWatchlistEntry(null);
+				return;
+			}
+
+			const watchlist = await getWatchlist();
+
+			const plannedEntry =
+				watchlist.find(
+					(item) => item.id === id && item.type === "tv",
+				) ?? null;
+
+			setInWatchlist(Boolean(plannedEntry));
+			setWatchlistEntry(plannedEntry);
+		} catch (error) {
+			console.error("Failed to load TV status:", error);
+			setAlreadyAdded(false);
+			setInWatchlist(false);
+			setSelectedEntry(null);
+			setWatchlistEntry(null);
+		} finally {
+			setLoading(false);
 		}
-	}, [alreadyAdded, id, refresh]);
+	}, [id]);
 
-	/* --------------------------
-	   DELETE
-	---------------------------*/
-	function handleDelete() {
-		removeDiaryEntry(id, "tv");
-		setRefresh((v) => !v);
+	useEffect(() => {
+		loadEntry();
+	}, [loadEntry]);
+
+	async function handleDelete() {
+		try {
+			setDeleting(true);
+
+			if (alreadyAdded) {
+				await removeDiaryEntry(id, "tv");
+			}
+
+			if (inWatchlist) {
+				await removeFromWatchlist(id, "tv");
+			}
+
+			setConfirmOpen(false);
+			await loadEntry();
+		} catch (error) {
+			console.error("Failed to remove TV show:", error);
+			alert(
+				`Could not remove this from your ${
+					alreadyAdded ? "diary" : "watchlist"
+				}.`,
+			);
+		} finally {
+			setDeleting(false);
+		}
 	}
+
+	async function handleModalSave(status: Status) {
+		if (status !== "planned") {
+			try {
+				await removeFromWatchlist(id, "tv");
+			} catch {
+				// Ignore if it was not in watchlist.
+			}
+		}
+
+		setOpen(false);
+		await loadEntry();
+	}
+
+	if (loading) return null;
+
+	const activeEntry = selectedEntry ?? watchlistEntry ?? undefined;
+
+	const deleteTarget = alreadyAdded ? "diary" : "watchlist";
+	const progressPercentage = getProgressPercentage(selectedEntry);
+	const episodeLabel = getEpisodeLabel(selectedEntry);
+
+	const isFinished =
+		selectedEntry?.status === "completed" || progressPercentage === 100;
 
 	return (
 		<>
-			{/* NOT ADDED → SHOW ADD BUTTON */}
-			{!alreadyAdded && (
+			{/* NOT ADDED AND NOT PLANNED */}
+			{!alreadyAdded && !inWatchlist && (
 				<AddToDiaryButton
 					variant="pill"
 					isAdded={false}
@@ -53,35 +376,98 @@ export default function TvDiaryActions({ id, title, poster, backdrop }: Props) {
 				/>
 			)}
 
-			{/* ADDED → SHOW EDIT + DELETE */}
-			{alreadyAdded && (
-				<div className="flex gap-3">
-					<button
-						onClick={() => setOpen(true)}
-						className="flex items-center justify-center gap-2 rounded-full bg-surface-elevated hover:bg-surface-neutral px-4 py-2 text-sm transition"
-					>
-						<Pencil className="w-4 h-4" />
-						Edit
-					</button>
+			{/* PLANNED / WATCHLIST */}
+			{!alreadyAdded && inWatchlist && (
+				<div className="space-y-3">
+					<div className="flex items-center gap-2 text-sm font-semibold text-green-400">
+						<CheckCircle2 className="h-4 w-4" />
+						<span>Planned</span>
+					</div>
 
-					<button
-						onClick={handleDelete}
-						className="flex items-center justify-center gap-2 rounded-full border border-accent text-accent hover:bg-accent hover:text-white px-4 py-2 text-sm transition"
-					>
-						<Trash2 className="w-4 h-4" />
-						Delete
-					</button>
+					<div className="flex gap-3">
+						<button
+							type="button"
+							onClick={() => setOpen(true)}
+							className="flex items-center justify-center gap-2 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white transition hover:bg-accent-hover"
+						>
+							<Plus className="h-4 w-4" />
+							Add to diary
+						</button>
+
+						<button
+							type="button"
+							onClick={() => setConfirmOpen(true)}
+							className="flex items-center justify-center gap-2 rounded-full border border-accent px-4 py-2 text-sm font-semibold text-accent transition hover:bg-accent hover:text-white"
+						>
+							<Trash2 className="h-4 w-4" />
+							Remove
+						</button>
+					</div>
 				</div>
-            )}
-            
-            {/* MODAL */}
+			)}
+
+			{/* ADDED TO DIARY */}
+			{alreadyAdded && (
+				<div className="space-y-3">
+					<div className="flex items-center gap-2 text-sm font-semibold text-green-400">
+						<CheckCircle2 className="h-4 w-4" />
+						<span>
+							{isFinished ? "Finished" : "Added to diary"}
+						</span>
+					</div>
+
+					{episodeLabel && !isFinished && (
+						<div className="flex w-fit items-center gap-2 rounded-full bg-accent px-3 py-1.5 text-xs font-semibold text-white">
+							<PlayCircle className="h-4 w-4" />
+							<span>{episodeLabel}</span>
+						</div>
+					)}
+
+					{progressPercentage !== null && !isFinished && (
+						<div className="max-w-xs space-y-1">
+							<div className="h-2 w-full overflow-hidden rounded-full bg-white/15">
+								<div
+									className="h-full rounded-full bg-accent"
+									style={{ width: `${progressPercentage}%` }}
+								/>
+							</div>
+
+							<p className="text-xs text-muted">
+								{progressPercentage}% watched
+							</p>
+						</div>
+					)}
+
+					<div className="flex gap-3">
+						<button
+							type="button"
+							onClick={() => setOpen(true)}
+							className="flex items-center justify-center gap-2 rounded-full bg-surface-elevated px-4 py-2 text-sm transition hover:bg-surface-neutral"
+						>
+							<Pencil className="h-4 w-4" />
+							Edit
+						</button>
+
+						<button
+							type="button"
+							onClick={() => setConfirmOpen(true)}
+							className="flex items-center justify-center gap-2 rounded-full border border-accent px-4 py-2 text-sm text-accent transition hover:bg-accent hover:text-white"
+						>
+							<Trash2 className="h-4 w-4" />
+							Delete
+						</button>
+					</div>
+				</div>
+			)}
+
 			{open && (
 				<AddToDiaryModal
 					open={open}
-					onClose={() => {
+					onClose={async () => {
 						setOpen(false);
-						setRefresh((v) => !v);
+						await loadEntry();
 					}}
+					onSave={handleModalSave}
 					content={{
 						id,
 						type: "tv",
@@ -89,9 +475,19 @@ export default function TvDiaryActions({ id, title, poster, backdrop }: Props) {
 						poster,
 						backdrop,
 					}}
-					initialData={selectedEntry ?? undefined}
+					initialData={activeEntry}
 				/>
 			)}
+
+			<ConfirmDialog
+				open={confirmOpen}
+				title={`Remove from ${deleteTarget}?`}
+				description={`Are you sure you want to remove "${title}" from your ${deleteTarget}? This will not delete the TV show itself.`}
+				confirmLabel="Remove"
+				loading={deleting}
+				onCancel={() => setConfirmOpen(false)}
+				onConfirm={handleDelete}
+			/>
 		</>
 	);
 }
