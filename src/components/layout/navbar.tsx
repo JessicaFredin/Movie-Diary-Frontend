@@ -348,6 +348,7 @@ import {
 	Menu,
 	User,
 	Notebook,
+	Bookmark,
 	Users,
 	Settings,
 	LogOut,
@@ -409,6 +410,7 @@ const navItems = [
 const profileNavItems = [
 	{ label: "Profile", href: "/profile", icon: User },
 	{ label: "My Diary", href: "/my-diary", icon: Notebook },
+	{ label: "My Watchlist", href: "/my-watchlist", icon: Bookmark },
 	{ label: "My Friends", href: "/friends", icon: Users },
 	{ label: "Settings", href: "/settings", icon: Settings },
 ];

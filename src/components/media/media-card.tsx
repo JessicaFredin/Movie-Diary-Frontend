@@ -16,10 +16,12 @@ import {
 import AddToDiaryModal from "@/components/diary/add-to-diary-modal";
 import { createClient } from "@/lib/supabase/client";
 import { removeDiaryEntry } from "@/utils/diary-storage";
+import { getWatchlist, removeFromWatchlist } from "@/utils/watchlist-storage";
 import type { DiaryEntry } from "@/types/diary";
+import ConfirmDialog from "@/components/ui/confirm-dialog";
 
 type MediaType = "movie" | "tv";
-type CardVariant = "default" | "compact" | "large" | "row";
+type CardVariant = "default" | "compact" | "large" | "row" | "watchlist";
 
 type TmdbMedia = {
 	id: number;
@@ -54,6 +56,8 @@ type ProgressShape = {
 	progress?: number;
 };
 
+type SaveStatus = "watching" | "completed" | "planned";
+
 type Props = {
 	media?: TmdbMedia;
 
@@ -68,8 +72,10 @@ type Props = {
 	showDeleteButton?: boolean;
 	onDiaryChanged?: () => void | Promise<void>;
 
-	// Used by My Diary page so the card already knows it is added
 	initialDiaryEntry?: DiaryEntry | null;
+
+	onWatchlistRemove?: () => void | Promise<void>;
+	onWatchlistSave?: (status: SaveStatus) => void | Promise<void>;
 };
 
 function getMediaType(media?: TmdbMedia, explicitType?: MediaType): MediaType {
@@ -153,9 +159,13 @@ export default function MediaCard({
 	showDeleteButton = true,
 	onDiaryChanged,
 	initialDiaryEntry,
+	onWatchlistRemove,
+	onWatchlistSave,
 }: Props) {
 	const router = useRouter();
 	const supabase = useMemo(() => createClient(), []);
+
+	const isWatchlist = variant === "watchlist";
 
 	const mediaId = id ?? media?.id;
 	const mediaType = getMediaType(media, type);
@@ -166,26 +176,43 @@ export default function MediaCard({
 	const mediaRating = rating ?? media?.vote_average ?? null;
 
 	const [diaryEntry, setDiaryEntry] = useState<DiaryEntry | null>(
-		initialDiaryEntry ?? null,
+		isWatchlist ? null : (initialDiaryEntry ?? null),
 	);
+
+	const [watchlistEntry, setWatchlistEntry] = useState<DiaryEntry | null>(
+		null,
+	);
+
 	const [modalOpen, setModalOpen] = useState(false);
 	const [checkingDiary, setCheckingDiary] = useState(true);
 	const [message, setMessage] = useState("");
 	const [deleting, setDeleting] = useState(false);
+	const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
 	useEffect(() => {
+		if (isWatchlist) {
+			setDiaryEntry(null);
+			setCheckingDiary(false);
+			return;
+		}
+
 		if (initialDiaryEntry !== undefined) {
 			setDiaryEntry(initialDiaryEntry);
 			setCheckingDiary(false);
 		}
-	}, [initialDiaryEntry]);
+	}, [initialDiaryEntry, isWatchlist]);
 
-	const isAdded = Boolean(diaryEntry);
+	const isAdded = !isWatchlist && Boolean(diaryEntry);
+	const isPlanned = !isWatchlist && !isAdded && Boolean(watchlistEntry);
+
 	const progressPercentage = getProgressPercentage(diaryEntry);
 	const tvEpisodeLabel = getTvEpisodeLabel(diaryEntry);
 
 	const isFinished =
 		diaryEntry?.status === "completed" || progressPercentage === 100;
+
+	const displayProgressPercentage =
+		isFinished && mediaType === "tv" ? 100 : progressPercentage;
 
 	const posterUrl = getImageUrl(mediaPosterPath, "w500");
 
@@ -196,11 +223,7 @@ export default function MediaCard({
 				? `/tv/${mediaId}`
 				: "#";
 
-    const isRow = variant === "row";
-
-	
-    
-    const sizeClass =
+	const sizeClass =
 		variant === "row"
 			? "w-[220px] min-w-[220px] shrink-0"
 			: variant === "compact"
@@ -212,8 +235,12 @@ export default function MediaCard({
 	const loadDiaryStatus = useCallback(async () => {
 		if (!mediaId) return;
 
-		// If parent already gave us diary data, use that.
-		// This is mainly for /my-diary page.
+		if (isWatchlist) {
+			setDiaryEntry(null);
+			setCheckingDiary(false);
+			return;
+		}
+
 		if (initialDiaryEntry !== undefined) {
 			setDiaryEntry(initialDiaryEntry);
 			setCheckingDiary(false);
@@ -228,6 +255,7 @@ export default function MediaCard({
 
 		if (!user) {
 			setDiaryEntry(null);
+			setWatchlistEntry(null);
 			setCheckingDiary(false);
 			return;
 		}
@@ -249,9 +277,24 @@ export default function MediaCard({
 			return;
 		}
 
-		setDiaryEntry(data ? mapDbToDiaryEntry(data as DbDiaryEntry) : null);
+		if (data) {
+			setDiaryEntry(mapDbToDiaryEntry(data as DbDiaryEntry));
+			setWatchlistEntry(null);
+			setCheckingDiary(false);
+			return;
+		}
+
+		const watchlist = await getWatchlist();
+
+		const plannedItem =
+			watchlist.find(
+				(item) => item.id === mediaId && item.type === mediaType,
+			) ?? null;
+
+		setDiaryEntry(null);
+		setWatchlistEntry(plannedItem);
 		setCheckingDiary(false);
-	}, [mediaId, mediaType, supabase, initialDiaryEntry]);
+	}, [mediaId, mediaType, supabase, initialDiaryEntry, isWatchlist]);
 
 	useEffect(() => {
 		loadDiaryStatus();
@@ -273,24 +316,59 @@ export default function MediaCard({
 	}
 
 	async function handleDeleteClick() {
-		if (!mediaId || !isAdded) return;
+		if (!mediaId) return;
 
 		try {
 			setDeleting(true);
+
+			if (isWatchlist || isPlanned) {
+				await removeFromWatchlist(mediaId, mediaType);
+				setWatchlistEntry(null);
+				await onWatchlistRemove?.();
+				await onDiaryChanged?.();
+				return;
+			}
+
+			if (!isAdded) return;
+
 			await removeDiaryEntry(mediaId, mediaType);
 			setDiaryEntry(null);
 			await onDiaryChanged?.();
 		} catch (error) {
 			console.error(error);
-			alert("Could not remove this from your diary.");
+			alert("Could not remove this.");
 		} finally {
 			setDeleting(false);
 		}
 	}
 
-	async function refreshAfterSave() {
-		// On /my-diary, parent reloads the diary.
-		// On normal browse pages, card loads its own Supabase status.
+	async function refreshAfterSave(status?: SaveStatus) {
+		if (isWatchlist && status) {
+			await onWatchlistSave?.(status);
+			return;
+		}
+
+		if (status === "planned" && mediaId) {
+			setDiaryEntry(null);
+
+			setWatchlistEntry({
+				id: mediaId,
+				type: mediaType,
+				title: mediaTitle,
+				poster: mediaPosterPath ?? "",
+				backdrop: mediaBackdropPath ?? mediaPosterPath ?? "",
+				status: "planned",
+				progress: undefined,
+				rating: null,
+				updatedAt: new Date().toISOString(),
+			} as DiaryEntry);
+
+			await onDiaryChanged?.();
+			return;
+		}
+
+		setWatchlistEntry(null);
+
 		await onDiaryChanged?.();
 
 		if (initialDiaryEntry === undefined) {
@@ -300,7 +378,10 @@ export default function MediaCard({
 
 	async function handleModalClose() {
 		setModalOpen(false);
-		await refreshAfterSave();
+
+		if (!isWatchlist) {
+			await refreshAfterSave();
+		}
 	}
 
 	function handleCardClick() {
@@ -308,10 +389,10 @@ export default function MediaCard({
 	}
 
 	const bottomStatusText = (() => {
+		if (isWatchlist || isPlanned) return "Planned";
 		if (!isAdded) return "Not added";
 
 		if (mediaType === "movie") return "Added";
-
 		if (isFinished) return "Finished";
 
 		if (progressPercentage !== null) {
@@ -323,13 +404,15 @@ export default function MediaCard({
 		return "Watching";
 	})();
 
+	const isPositiveStatus = isAdded || isWatchlist || isPlanned;
+
 	return (
 		<>
 			<div className={`relative ${sizeClass}`}>
 				<div
 					onClick={handleCardClick}
 					className={`group relative cursor-pointer overflow-hidden rounded-xl bg-surface-elevated transition duration-300 hover:-translate-y-1 ${
-						isAdded
+						isPositiveStatus
 							? "ring-1 ring-green-500/40 shadow-[0_0_18px_rgba(34,197,94,0.20)]"
 							: "ring-1 ring-white/10 hover:ring-accent/80"
 					}`}
@@ -341,32 +424,77 @@ export default function MediaCard({
 							fill
 							sizes="(max-width: 768px) 50vw, (max-width: 1200px) 20vw, 14vw"
 							className={`object-cover transition duration-300 group-hover:scale-105 ${
-								isAdded ? "brightness-[0.68]" : "brightness-100"
+								isPositiveStatus
+									? "brightness-[0.68]"
+									: "brightness-100"
 							}`}
 						/>
 
 						<div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/25 to-transparent" />
 
 						{/* ACTIONS */}
-						{!isAdded ? (
-							<button
-								type="button"
-								onClick={(e) => {
-									e.stopPropagation();
-									handleAddOrEditClick();
-								}}
-								disabled={checkingDiary}
-								className={`absolute  z-20 flex items-center justify-center rounded-full bg-accent text-white shadow-lg transition hover:bg-accent-hover disabled:opacity-50 ${
-									isRow
-										? "right-2 top-2 h-8 w-8"
-										: "right-3 top-3 h-11 w-11"
-								}`}
-								title="Add to diary"
-							>
-								<Plus
-									className={isRow ? "h-5 w-5" : "h-7 w-7"}
-								/>
-							</button>
+						{isWatchlist ? (
+							<div className="absolute right-3 top-3 z-20 flex flex-col gap-2">
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										handleAddOrEditClick();
+									}}
+									disabled={checkingDiary}
+									className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-white shadow-lg transition hover:bg-accent-hover disabled:opacity-50"
+									title="Add to diary"
+								>
+									<Plus className="h-5 w-5" />
+								</button>
+
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										setConfirmDeleteOpen(true);
+									}}
+									disabled={deleting}
+									className="flex h-9 w-9 items-center justify-center rounded-full bg-black/70 text-white shadow-lg transition hover:bg-red-600 disabled:opacity-50"
+									title="Remove from watchlist"
+								>
+									<Trash2 className="h-4 w-4" />
+								</button>
+							</div>
+						) : !isAdded ? (
+							<div className="absolute right-3 top-3 z-20 flex flex-col gap-2">
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										handleAddOrEditClick();
+									}}
+									disabled={checkingDiary}
+									className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-white shadow-lg transition hover:bg-accent-hover disabled:opacity-50"
+									title={
+										isPlanned
+											? "Move to diary"
+											: "Add to diary"
+									}
+								>
+									<Plus className="h-5 w-5" />
+								</button>
+
+								{isPlanned && (
+									<button
+										type="button"
+										onClick={(e) => {
+											e.stopPropagation();
+											setConfirmDeleteOpen(true);
+										}}
+										disabled={deleting}
+										className="flex h-9 w-9 items-center justify-center rounded-full bg-black/70 text-white shadow-lg transition hover:bg-red-600 disabled:opacity-50"
+										title="Remove from watchlist"
+									>
+										<Trash2 className="h-4 w-4" />
+									</button>
+								)}
+							</div>
 						) : (
 							<div className="absolute right-3 top-3 z-20 flex flex-col gap-2">
 								<button
@@ -387,7 +515,7 @@ export default function MediaCard({
 										type="button"
 										onClick={(e) => {
 											e.stopPropagation();
-											handleDeleteClick();
+											setConfirmDeleteOpen(true);
 										}}
 										disabled={deleting}
 										className="flex h-9 w-9 items-center justify-center rounded-full bg-black/70 text-white shadow-lg transition hover:bg-red-600 disabled:opacity-50"
@@ -408,12 +536,12 @@ export default function MediaCard({
 							<div className="mt-1 flex items-center justify-between gap-2">
 								<p
 									className={`flex items-center gap-1 text-xs ${
-										isAdded
+										isPositiveStatus
 											? "font-semibold text-green-400"
 											: "text-gray-300"
 									}`}
 								>
-									{isAdded && (
+									{isPositiveStatus && (
 										<CheckCircle2 className="h-3.5 w-3.5" />
 									)}
 									{bottomStatusText}
@@ -431,19 +559,25 @@ export default function MediaCard({
 							{/* TV PROGRESS */}
 							{isAdded && mediaType === "tv" && (
 								<div className="mt-2">
-									{!isFinished &&
-										progressPercentage !== null && (
-											<div className="mb-2 h-1.5 w-full overflow-hidden rounded-full bg-white/20">
+									{displayProgressPercentage !== null && (
+										<>
+											<div className="mb-1 h-1.5 w-full overflow-hidden rounded-full bg-white/20">
 												<div
 													className="h-full rounded-full bg-accent"
 													style={{
-														width: `${progressPercentage}%`,
+														width: `${displayProgressPercentage}%`,
 													}}
 												/>
 											</div>
-										)}
 
-									{tvEpisodeLabel && !isFinished && (
+											<p className="mb-2 text-[10px] font-semibold text-gray-300">
+												{displayProgressPercentage}%
+												watched
+											</p>
+										</>
+									)}
+
+									{tvEpisodeLabel && (
 										<div className="flex w-fit items-center gap-1 rounded-md bg-accent px-2 py-1 text-xs font-semibold text-white">
 											<PlayCircle className="h-3.5 w-3.5" />
 											<span>{tvEpisodeLabel}</span>
@@ -476,10 +610,25 @@ export default function MediaCard({
 						poster: mediaPosterPath ?? "",
 						backdrop: mediaBackdropPath ?? mediaPosterPath ?? "",
 					}}
-					initialData={diaryEntry ?? undefined}
+					initialData={diaryEntry ?? watchlistEntry ?? undefined}
 					onSave={refreshAfterSave}
 				/>
 			)}
+
+			<ConfirmDialog
+				open={confirmDeleteOpen}
+				title={`Remove from ${isWatchlist ? "watchlist" : "diary"}?`}
+				description={`Are you sure you want to remove "${mediaTitle}" from your ${
+					isWatchlist ? "watchlist" : "diary"
+				}?`}
+				confirmLabel="Remove"
+				loading={deleting}
+				onCancel={() => setConfirmDeleteOpen(false)}
+				onConfirm={async () => {
+					await handleDeleteClick();
+					setConfirmDeleteOpen(false);
+				}}
+			/>
 		</>
 	);
 }
