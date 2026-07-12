@@ -1,104 +1,3 @@
-// "use client";
-
-// import Image from "next/image";
-// import { Icon } from "@iconify/react";
-
-// type Props = {
-// 	id: number;
-// 	type: "movie" | "tv";
-// 	title: string;
-// 	description: string;
-// 	poster: string;
-// 	year?: string;
-// 	rating?: number;
-// 	genres?: string[];
-// };
-
-// export default function Hero({
-// 	id,
-// 	type,
-// 	title,
-// 	description,
-// 	poster,
-// 	year,
-// 	rating,
-// 	genres = [],
-// }: Props) {
-// 	return (
-// 		<section className="relative w-full h-[60vh] md:h-[70vh] overflow-hidden">
-// 			{/* Background Image */}
-// 			<Image
-// 				src={poster}
-// 				alt={title}
-// 				fill
-// 				priority
-// 				className="absolute inset-0 w-full h-full object-cover object-top"
-// 			/>
-
-// 			{/* Blur Panel (only on md+ screens) */}
-// 			<div className="hidden md:block absolute top-0 left-0 h-full w-[32%] bg-[#D9D9D9]/10 backdrop-blur-[30px] z-10"></div>
-
-// 			{/* Gradient Overlay (only on mobile) */}
-// 			<div className="block md:hidden absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-black/80 via-black/30 to-transparent z-10"></div>
-
-// 			{/* Text Content */}
-// 			<div className="absolute z-20 w-full md:w-[32%] px-4 md:px-6 text-white flex flex-col justify-center h-full items-center md:items-start text-center md:text-left">
-// 				{/* Rating + Title + Year */}
-// 				<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-8 mb-2">
-// 					{rating && (
-// 						<span className="text-yellow-400 text-sm">
-// 							★ {rating.toFixed(1)}
-// 						</span>
-// 					)}
-// 					<h1 className="text-2xl sm:text-3xl md:text-5xl font-bold drop-shadow-[4px_4px_10px_rgba(0,0,0,0.3)]">
-// 						{title}
-// 					</h1>
-// 					{year && (
-// 						<span className="text-gray-300 text-sm">({year})</span>
-// 					)}
-// 				</div>
-
-// 				{/* Description */}
-// 				<p className="mt-2 md:mt-4 text-xs sm:text-sm md:text-base leading-relaxed text-white drop-shadow-[3px_3px_8px_rgba(0,0,0,0.4)] max-w-lg md:max-w-none">
-// 					{description}
-// 				</p>
-
-// 				{/* Genres */}
-// 				{genres.length > 0 && (
-// 					<div className="mt-3 md:mt-4 flex flex-wrap justify-center md:justify-start gap-2">
-// 						{genres.map((genre) => (
-// 							<span
-// 								key={genre}
-// 								className="px-3 sm:px-4 py-1 rounded-full text-xs sm:text-sm text-white border border-[#FF414E] bg-white/10 backdrop-blur-sm"
-// 							>
-// 								{genre}
-// 							</span>
-// 						))}
-// 					</div>
-// 				)}
-
-// 				{/* Buttons */}
-// 				<div className="mt-4 md:mt-6 flex gap-3 md:gap-4 justify-center md:justify-start">
-// 					<button className="px-4 sm:px-6 py-2 bg-[#FF414E] hover:bg-[#e63946] text-white font-semibold rounded-full cursor-pointer text-sm sm:text-base">
-// 						More Info
-// 					</button>
-// 					<button className="relative w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full border border-white text-white hover:bg-white transition-colors cursor-pointer group">
-// 						<Icon
-// 							icon="material-symbols:add-2-rounded"
-// 							className="w-6 h-6 sm:w-7 sm:h-7 transition-colors group-hover:text-black"
-// 						/>
-
-// 						{/* Tooltip (desktop only) */}
-// 						<span className="hidden md:block absolute left-full ml-2 px-3 py-1 text-xs text-white bg-black/80 rounded-full opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-// 							Add to Diary
-// 						</span>
-// 					</button>
-// 				</div>
-// 			</div>
-// 		</section>
-// 	);
-// }
-
 "use client";
 
 import Image from "next/image";
@@ -136,88 +35,94 @@ export default function Hero({
 	genre_ids = [],
 }: Props) {
 	const router = useRouter();
-	console.log("Hero genres:", genres);
 	const [isDiaryOpen, setIsDiaryOpen] = useState(false);
 
 	return (
-		<section className="relative w-full h-[60vh] md:h-[70vh] overflow-hidden">
-			{/* Background Image */}
+		<section className="relative h-[60vh] w-full overflow-hidden md:h-[70vh]">
 			<Image
 				src={backdropPath}
 				alt={title}
 				fill
 				priority
-				className="absolute inset-0 w-full h-full object-cover object-top"
+				className="absolute inset-0 h-full w-full object-cover object-top"
 			/>
 
-			{/* Blur Panel (desktop) */}
-			<div className="hidden md:block absolute top-0 left-0 h-full w-[32%] bg-[#D9D9D9]/10 backdrop-blur-[30px] z-10" />
+			{/* Dark left glass panel */}
+			<div className="hidden md:block absolute inset-y-0 left-0 z-10 w-[34%] bg-black/55 backdrop-blur-[28px]" />
 
-			{/* Mobile gradient */}
-			<div className="block md:hidden absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-black/80 via-black/30 to-transparent z-10" />
+			{/* Extra dark fade so white text is always readable */}
+			<div className="absolute inset-0 z-10 bg-gradient-to-r from-black/85 via-black/35 to-black/5" />
+			<div className="absolute inset-0 z-10 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
-			{/* ===== TEXT CONTENT ===== */}
-			<div className="absolute z-20 w-full md:w-[32%] px-4 md:px-12 text-white flex flex-col justify-center h-full items-center md:items-start text-center md:text-left overflow-hidden">
-				{/* Rating + Title + Year */}
-				<div className="flex items-center gap-2 md:gap-4 mb-2 flex-nowrap overflow-hidden max-w-full">
-					{typeof rating === "number" && (
-						<span className="text-warning text-sm whitespace-nowrap shrink-0">
-							★ {rating.toFixed(1)}
-						</span>
-					)}
-
-					<h1 className="text-2xl sm:text-3xl md:text-5xl font-bold truncate max-w-full">
-						{title}
-					</h1>
-
-					{year && (
-						<span className="text-gray-300 text-sm whitespace-nowrap shrink-0">
-							({year})
-						</span>
-					)}
-				</div>
-
-				{/* Description (3 lines + see more) */}
-				<div className="mt-2 md:mt-4 max-w-full">
-					<ExpandableText text={description ?? ""} />
-				</div>
-
-				{/* Genres */}
-				{genre_ids.length > 0 && (
-					<div className="mt-3 md:mt-4 flex flex-wrap justify-center md:justify-start gap-2 max-w-full">
-						{genre_ids.map((id) => (
-							<span
-								key={id}
-								className="px-3 sm:px-4 py-1 rounded-full text-xs sm:text-sm text-white border border-accent bg-white/10 backdrop-blur-sm whitespace-nowrap"
-							>
-								{GENRE_MAP[id]}
+			{/* Text content */}
+			<div className="absolute z-20 flex h-full w-full flex-col justify-center px-5 text-white md:w-[34%] md:items-start md:px-12">
+				<div className="max-w-full">
+					<div className="mb-3 flex max-w-full items-center gap-3">
+						{typeof rating === "number" && (
+							<span className="shrink-0 text-sm font-semibold text-warning">
+								★ {rating.toFixed(1)}
 							</span>
-						))}
+						)}
+
+						<h1 className="truncate text-2xl font-bold leading-tight text-white sm:text-3xl md:text-5xl">
+							{title}
+						</h1>
+
+						{year && (
+							<span className="shrink-0 text-sm text-gray-300">
+								({year})
+							</span>
+						)}
 					</div>
-				)}
 
-				{/* Buttons */}
-				<div className="mt-4 md:mt-6 flex gap-3 md:gap-4 justify-center md:justify-start">
-					<button
-						onClick={() => router.push(`/${type}/${id}`)}
-						className="px-4 sm:px-6 py-2 bg-accent hover:bg-accent-hover text-white font-semibold rounded-full cursor-pointer text-sm sm:text-base"
-					>
-						More Info
-					</button>
+					<div className="max-w-full text-sm leading-6 text-gray-100 md:text-base">
+						<ExpandableText text={description ?? ""} />
+					</div>
 
-					<button
-						onClick={() => setIsDiaryOpen(true)}
-						className="relative w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full border border-white text-white hover:bg-white transition-colors cursor-pointer group"
-					>
-						<Icon
-							icon="material-symbols:add-2-rounded"
-							className="w-6 h-6 sm:w-7 sm:h-7 transition-colors group-hover:text-black"
-						/>
+					{genre_ids.length > 0 && (
+						<div className="mt-4 flex max-w-full flex-wrap gap-2">
+							{genre_ids.map((genreId) => {
+								const genreName = GENRE_MAP[genreId];
 
-						<span className="hidden md:block absolute left-full ml-2 px-3 py-1 text-xs text-white bg-black/80 rounded-full opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-							Add to Diary
-						</span>
-					</button>
+								if (!genreName) return null;
+
+								return (
+									<span
+										key={genreId}
+										className="rounded-full border border-accent/70  bg-white/10 px-3 py-1 text-xs text-white shadow-sm backdrop-blur-md"
+									>
+										{genreName}
+									</span>
+								);
+							})}
+						</div>
+					)}
+
+					<div className="mt-6 flex items-center gap-3">
+						<button
+							type="button"
+							onClick={() => router.push(`/${type}/${id}`)}
+							className="rounded-full bg-accent px-5 py-2 text-sm font-semibold text-white transition hover:bg-accent-hover"
+						>
+							More Info
+						</button>
+
+						<button
+							type="button"
+							onClick={() => setIsDiaryOpen(true)}
+							className="group/add-diary relative flex h-10 w-10 items-center justify-center rounded-full border border-white/70 text-white transition hover:bg-white"
+							aria-label="Add to diary"
+						>
+							<Icon
+								icon="material-symbols:add-2-rounded"
+								className="h-6 w-6 transition group-hover/add-diary:text-black"
+							/>
+
+							<span className="absolute left-full ml-2 hidden whitespace-nowrap rounded-full bg-black/80 px-3 py-1 text-xs text-white opacity-0 transition-opacity group-hover/add-diary:opacity-100 md:block">
+								Add to Diary
+							</span>
+						</button>
+					</div>
 				</div>
 			</div>
 
