@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import { Camera } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -8,7 +8,8 @@ import Image from "next/image";
 
 type Props = {
 	src?: string | null;
-	name: string;
+	displayName?: string;
+	editable?: boolean;
 	onChange: (value: string) => void | Promise<void>;
 };
 
@@ -25,12 +26,17 @@ function getInitials(nameOrEmail: string) {
 		return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
 	}
 
-	return clean.slice(0, 2).toUpperCase() || "U";
+	return clean.slice(0, 2).toUpperCase();
 }
 
-export default function ProfileAvatar({ src, name, onChange }: Props) {
+export default function ProfileAvatar({
+	src,
+	displayName = "User",
+	editable = false,
+	onChange,
+}: Props) {
 	const inputRef = useRef<HTMLInputElement>(null);
-	const supabase = createClient();
+	const supabase = useMemo(() => createClient(), []);
 
 	const [previewSrc, setPreviewSrc] = useState<string | null>(src ?? null);
 	const [uploading, setUploading] = useState(false);
@@ -39,8 +45,8 @@ export default function ProfileAvatar({ src, name, onChange }: Props) {
 		setPreviewSrc(src ?? null);
 	}, [src]);
 
-	async function handleFile(e: ChangeEvent<HTMLInputElement>) {
-		const file = e.target.files?.[0];
+	async function handleFile(event: ChangeEvent<HTMLInputElement>) {
+		const file = event.target.files?.[0];
 		if (!file) return;
 
 		const {
@@ -88,42 +94,42 @@ export default function ProfileAvatar({ src, name, onChange }: Props) {
 	}
 
 	return (
-		<div className="group relative h-32 w-32 shrink-0 rounded-full shadow-[0_0_22px_#FF414E] md:h-40 md:w-40">
-			<div className="h-full w-full overflow-hidden rounded-full border-4 border-accent bg-slate-600">
-				{previewSrc ? (
-					<Image
-						src={previewSrc}
-						alt="Profile avatar"
-						width={180}
-						height={180}
-						className="h-full w-full object-cover"
-					/>
-				) : (
-					<div className="flex h-full w-full items-center justify-center bg-slate-500 text-5xl font-bold text-white md:text-6xl">
-						{getInitials(name)}
-					</div>
-				)}
-			</div>
-
-			<button
-				type="button"
-				onClick={() => inputRef.current?.click()}
-				disabled={uploading}
-				className="absolute inset-0 flex items-center justify-center rounded-full bg-black/35 text-white opacity-0 transition group-hover:opacity-100 disabled:opacity-60"
-				title="Change profile picture"
-			>
-				<div className="flex h-11 w-11 items-center justify-center rounded-full bg-black/70 ring-1 ring-white/20">
-					<Camera className="h-5 w-5" />
+		<div className="group/avatar relative h-36 w-36 shrink-0 overflow-hidden rounded-full border-4 border-accent bg-slate-500 shadow-[0_0_24px_#FF414E] md:h-44 md:w-44">
+			{previewSrc ? (
+				<Image
+					src={previewSrc}
+					alt={displayName}
+					width={176}
+					height={176}
+					className="h-full w-full object-cover"
+				/>
+			) : (
+				<div className="flex h-full w-full items-center justify-center text-6xl text-white">
+					{getInitials(displayName)}
 				</div>
-			</button>
+			)}
 
-			<input
-				type="file"
-				accept="image/*"
-				ref={inputRef}
-				onChange={handleFile}
-				className="hidden"
-			/>
+			{editable && (
+				<>
+					<button
+						type="button"
+						onClick={() => inputRef.current?.click()}
+						disabled={uploading}
+						className="absolute inset-0 flex items-center justify-center bg-black/45 text-white opacity-0 transition group-hover/avatar:opacity-100 disabled:opacity-50"
+						aria-label="Change profile picture"
+					>
+						<Camera className="h-8 w-8" />
+					</button>
+
+					<input
+						type="file"
+						accept="image/*"
+						ref={inputRef}
+						onChange={handleFile}
+						className="hidden"
+					/>
+				</>
+			)}
 		</div>
 	);
 }

@@ -1,17 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Film, MessageCircle, Pencil, UserPlus, Users } from "lucide-react";
+import { Film, MessageCircle, Pencil, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import ProfileDiaryStrip, {
 	ProfileAchievements,
 } from "@/components/profile/profile-diary-strip";
 import StreamingServices from "@/components/profile/streaming-services";
-import PrivateDiaryGate from "@/components/profile/private-diary-gate";
-
-type AccessStatus = "none" | "pending" | "accepted" | "declined";
+import AddFriendButton from "@/components/friends/add-friend-button";
 
 type ProfileRow = {
 	id: string;
@@ -34,7 +32,7 @@ type DiaryPreviewItem = {
 };
 
 type AccessRequestRow = {
-	status: AccessStatus;
+	status: "pending" | "accepted" | "declined";
 };
 
 const DEFAULT_BANNER = "/images/profile-banner.jpg";
@@ -56,14 +54,14 @@ export default function PublicUserProfilePage() {
 	const params = useParams<{ id: string }>();
 	const profileId = params.id;
 
-	const supabase = createClient();
+	const supabase = useMemo(() => createClient(), []);
 
 	const [profile, setProfile] = useState<ProfileRow | null>(null);
 	const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 	const [diaryItems, setDiaryItems] = useState<DiaryPreviewItem[]>([]);
 	const [loggedCount, setLoggedCount] = useState(0);
-	const [accessStatus, setAccessStatus] = useState<AccessStatus>("none");
-	const [requestingAccess, setRequestingAccess] = useState(false);
+	const [friendCount, setFriendCount] = useState(0);
+	const [canShowDiary, setCanShowDiary] = useState(false);
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
@@ -93,42 +91,60 @@ export default function PublicUserProfilePage() {
 			const typedProfile = profileData as ProfileRow | null;
 			setProfile(typedProfile);
 
-			const isOwnProfile = user?.id === profileId;
-
-			let finalAccessStatus: AccessStatus = "none";
-
-			if (user && !isOwnProfile && typedProfile?.is_private_diary) {
-				const { data: requestData, error: requestError } =
-					await supabase
-						.from("diary_access_requests")
-						.select("status")
-						.eq("owner_id", profileId)
-						.eq("requester_id", user.id)
-						.maybeSingle();
-
-				if (requestError) {
-					console.error(requestError);
-				}
-
-				const typedRequest = requestData as AccessRequestRow | null;
-				finalAccessStatus = typedRequest?.status ?? "none";
+			if (!typedProfile) {
+				setLoading(false);
+				return;
 			}
 
-			setAccessStatus(finalAccessStatus);
+			const isOwnProfile = user?.id === profileId;
 
-			const canShowDiary =
-				isOwnProfile ||
-				typedProfile?.is_private_diary === false ||
-				finalAccessStatus === "accepted";
-
-			const { count } = await supabase
+			const { count: diaryCount } = await supabase
 				.from("diary_entries")
 				.select("id", { count: "exact", head: true })
 				.eq("user_id", profileId);
 
-			setLoggedCount(count ?? 0);
+			setLoggedCount(diaryCount ?? 0);
 
-			if (canShowDiary) {
+			const { count: friendsTotal } = await supabase
+				.from("friendships")
+				.select("id", { count: "exact", head: true })
+				.eq("user_id", profileId);
+
+			setFriendCount(friendsTotal ?? 0);
+
+			let isFriend = false;
+			let hasDiaryAccess = false;
+
+			if (user && !isOwnProfile) {
+				const { data: friendship } = await supabase
+					.from("friendships")
+					.select("id")
+					.eq("user_id", user.id)
+					.eq("friend_id", profileId)
+					.maybeSingle();
+
+				isFriend = Boolean(friendship);
+
+				const { data: diaryAccess } = await supabase
+					.from("diary_access_requests")
+					.select("status")
+					.eq("owner_id", profileId)
+					.eq("requester_id", user.id)
+					.maybeSingle();
+
+				const typedAccess = diaryAccess as AccessRequestRow | null;
+				hasDiaryAccess = typedAccess?.status === "accepted";
+			}
+
+			const allowedToSeeDiary =
+				isOwnProfile ||
+				typedProfile.is_private_diary === false ||
+				isFriend ||
+				hasDiaryAccess;
+
+			setCanShowDiary(allowedToSeeDiary);
+
+			if (allowedToSeeDiary) {
 				const { data: diaryData } = await supabase
 					.from("diary_entries")
 					.select(
@@ -153,46 +169,6 @@ export default function PublicUserProfilePage() {
 		loadProfile();
 	}, [profileId, supabase]);
 
-	async function handleRequestAccess() {
-		const {
-			data: { user },
-		} = await supabase.auth.getUser();
-
-		if (!user) {
-			alert("You need to log in first to request access.");
-			return;
-		}
-
-		if (user.id === profileId) return;
-
-		try {
-			setRequestingAccess(true);
-
-			const { error } = await supabase
-				.from("diary_access_requests")
-				.upsert(
-					{
-						owner_id: profileId,
-						requester_id: user.id,
-						status: "pending",
-						updated_at: new Date().toISOString(),
-					},
-					{
-						onConflict: "owner_id,requester_id",
-					},
-				);
-
-			if (error) {
-				alert(error.message);
-				return;
-			}
-
-			setAccessStatus("pending");
-		} finally {
-			setRequestingAccess(false);
-		}
-	}
-
 	if (loading) {
 		return (
 			<main className="min-h-screen bg-black px-6 py-12 text-white">
@@ -211,12 +187,7 @@ export default function PublicUserProfilePage() {
 
 	const displayName = profile.display_name ?? "User";
 	const isOwnProfile = currentUserId === profile.id;
-	const diaryIsPrivate = profile.is_private_diary && !isOwnProfile;
-
-	const canShowDiary =
-		isOwnProfile ||
-		profile.is_private_diary === false ||
-		accessStatus === "accepted";
+	const diaryIsPrivate = profile.is_private_diary && !canShowDiary;
 
 	return (
 		<main className="min-h-screen bg-black text-white">
@@ -233,7 +204,6 @@ export default function PublicUserProfilePage() {
 
 				<div className="relative -mt-24 px-6 md:px-16">
 					<div className="flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
-						{/* LEFT SIDE */}
 						<div className="flex flex-col gap-6 md:flex-row md:items-end">
 							<div className="h-36 w-36 shrink-0 overflow-hidden rounded-full border-4 border-accent bg-slate-500 shadow-[0_0_22px_#FF414E] md:h-44 md:w-44">
 								{profile.avatar_url ? (
@@ -267,7 +237,6 @@ export default function PublicUserProfilePage() {
 							</div>
 						</div>
 
-						{/* RIGHT SIDE: stats + actions aligned together */}
 						<div className="flex flex-col items-center gap-6 pb-4 lg:min-w-[260px]">
 							<div className="flex gap-6">
 								<div className="text-center">
@@ -275,7 +244,9 @@ export default function PublicUserProfilePage() {
 										<Users className="h-6 w-6" />
 									</div>
 
-									<p className="text-xl font-bold">0</p>
+									<p className="text-xl font-bold">
+										{friendCount}
+									</p>
 									<p className="text-xs text-muted">
 										FRIENDS
 									</p>
@@ -296,19 +267,19 @@ export default function PublicUserProfilePage() {
 							{isOwnProfile ? (
 								<Link
 									href="/profile"
-									className="flex px-5 py-3 items-center justify-center gap-2 rounded-full bg-accent text-sm font-bold text-white shadow-lg shadow-accent/20 transition hover:bg-accent-hover"
+									className="flex h-14 w-[180px] items-center justify-center gap-2 rounded-full bg-accent text-sm font-bold text-white shadow-lg shadow-accent/20 transition hover:bg-accent-hover"
 								>
 									<Pencil className="h-4 w-4" />
 									Edit profile
 								</Link>
 							) : (
 								<div className="flex gap-4">
-									<button className="flex h-14 w-[150px] items-center justify-center gap-2 rounded-full bg-accent text-sm font-bold text-white shadow-lg shadow-accent/20 transition hover:bg-accent-hover">
-										<UserPlus className="h-4 w-4" />
-										Add Friend
-									</button>
+									<AddFriendButton profileId={profile.id} />
 
-									<button className="flex h-14 w-[150px] items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.05] text-sm font-bold text-white transition hover:bg-white/[0.1]">
+									<button
+										type="button"
+										className="flex h-14 w-[150px] items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.05] text-sm font-bold text-white transition hover:bg-white/[0.1]"
+									>
 										<MessageCircle className="h-4 w-4" />
 										Message
 									</button>
@@ -326,22 +297,13 @@ export default function PublicUserProfilePage() {
 				</div>
 			</section>
 
-			{canShowDiary ? (
-				<ProfileDiaryStrip
-					items={diaryItems}
-					displayName={displayName}
-					isPrivate={diaryIsPrivate}
-					showViewAll={diaryItems.length > 0}
-					viewAllHref={`/users/${profile.id}/diary`}
-				/>
-			) : (
-				<PrivateDiaryGate
-					displayName={displayName}
-					requestStatus={accessStatus}
-					requesting={requestingAccess}
-					onRequestAccess={handleRequestAccess}
-				/>
-			)}
+			<ProfileDiaryStrip
+				items={diaryItems}
+				displayName={displayName}
+				isPrivate={diaryIsPrivate}
+				showViewAll={canShowDiary}
+				profileId={profile.id}
+			/>
 
 			<ProfileAchievements />
 		</main>

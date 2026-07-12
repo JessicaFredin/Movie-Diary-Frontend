@@ -18,6 +18,11 @@ type Props = {
 	displayName: string;
 	isPrivate?: boolean;
 	showViewAll?: boolean;
+
+	// Use this when showing another user's profile.
+	profileId?: string;
+
+	// Optional override if you want to manually pass the link.
 	viewAllHref?: string;
 };
 
@@ -50,8 +55,12 @@ export default function ProfileDiaryStrip({
 	displayName,
 	isPrivate = false,
 	showViewAll = true,
-	viewAllHref = "/my-diary",
+	profileId,
+	viewAllHref,
 }: Props) {
+	const finalViewAllHref =
+		viewAllHref ?? (profileId ? `/users/${profileId}/diary` : "/my-diary");
+
 	return (
 		<section className="px-6 md:px-16 mt-16">
 			<div className="mb-6 flex items-end justify-between gap-4">
@@ -69,7 +78,7 @@ export default function ProfileDiaryStrip({
 
 				{showViewAll && items.length > 0 && (
 					<Link
-						href={viewAllHref}
+						href={finalViewAllHref}
 						className="text-sm font-semibold text-accent hover:underline"
 					>
 						View full diary
@@ -166,10 +175,14 @@ export function ProfileAchievements() {
 					<h2 className="text-3xl font-bold text-white">
 						Achievements
 					</h2>
+
 					<p className="mt-1 text-muted">2 of 6 unlocked</p>
 				</div>
 
-				<button className="text-sm font-semibold text-accent hover:underline">
+				<button
+					type="button"
+					className="text-sm font-semibold text-accent hover:underline"
+				>
 					View all
 				</button>
 			</div>

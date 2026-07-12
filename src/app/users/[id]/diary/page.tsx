@@ -86,6 +86,7 @@ export default function PublicDiaryPage() {
 	const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 	const [entries, setEntries] = useState<PublicDiaryEntry[]>([]);
 	const [accessStatus, setAccessStatus] = useState<AccessStatus>("none");
+	const [hasFriendAccess, setHasFriendAccess] = useState(false);
 	const [requestingAccess, setRequestingAccess] = useState(false);
 	const [loading, setLoading] = useState(true);
 
@@ -100,6 +101,8 @@ export default function PublicDiaryPage() {
 	useEffect(() => {
 		async function loadDiaryPage() {
 			setLoading(true);
+			setEntries([]);
+			setHasFriendAccess(false);
 
 			const {
 				data: { user },
@@ -133,6 +136,24 @@ export default function PublicDiaryPage() {
 			const isOwnProfile = user?.id === profileId;
 
 			let finalAccessStatus: AccessStatus = "none";
+			let isFriend = false;
+
+			if (user && !isOwnProfile) {
+				const { data: friendshipData, error: friendshipError } =
+					await supabase
+						.from("friendships")
+						.select("id")
+						.eq("user_id", user.id)
+						.eq("friend_id", profileId)
+						.maybeSingle();
+
+				if (friendshipError) {
+					console.error(friendshipError.message);
+				}
+
+				isFriend = Boolean(friendshipData);
+				setHasFriendAccess(isFriend);
+			}
 
 			if (user && !isOwnProfile && typedProfile.is_private_diary) {
 				const { data: requestData, error: requestError } =
@@ -156,6 +177,7 @@ export default function PublicDiaryPage() {
 			const canViewDiary =
 				isOwnProfile ||
 				typedProfile.is_private_diary === false ||
+				isFriend ||
 				finalAccessStatus === "accepted";
 
 			if (!canViewDiary) {
@@ -241,6 +263,7 @@ export default function PublicDiaryPage() {
 	const canViewDiary =
 		isOwnProfile ||
 		profile?.is_private_diary === false ||
+		hasFriendAccess ||
 		accessStatus === "accepted";
 
 	const items = useMemo(() => {
@@ -305,11 +328,11 @@ export default function PublicDiaryPage() {
 	}
 
 	return (
-		<div className="relative px-6 md:px-24 py-10 overflow-hidden min-h-screen bg-black text-white">
+		<div className="relative min-h-screen overflow-hidden bg-black px-6 py-10 text-white md:px-24">
 			<img
 				src="/images/swoosh.svg"
 				alt=""
-				className="absolute inset-0 w-full h-full object-cover opacity-[0.25] pointer-events-none"
+				className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.25]"
 			/>
 
 			<div className="relative z-10 mb-8 flex items-center justify-between gap-4">
@@ -352,15 +375,15 @@ export default function PublicDiaryPage() {
 				/>
 
 				{filtersOpen && (
-					<div className="mb-8 p-6 rounded-2xl bg-[#1b1b1b] border border-border">
-						<div className="flex justify-between items-center mb-6">
+					<div className="mb-8 rounded-2xl border border-border bg-[#1b1b1b] p-6">
+						<div className="mb-6 flex items-center justify-between">
 							<h3 className="text-lg font-semibold">Filters</h3>
 
 							{activeFilterCount > 0 && (
 								<button
 									type="button"
 									onClick={clearAllFilters}
-									className="text-accent text-sm hover:underline"
+									className="text-sm text-accent hover:underline"
 								>
 									Clear all
 								</button>
@@ -368,7 +391,7 @@ export default function PublicDiaryPage() {
 						</div>
 
 						<div className="mb-6">
-							<h4 className="text-xs uppercase tracking-wide text-muted mb-3">
+							<h4 className="mb-3 text-xs uppercase tracking-wide text-muted">
 								Genre
 							</h4>
 
@@ -391,7 +414,7 @@ export default function PublicDiaryPage() {
 														: [...prev, genre],
 												);
 											}}
-											className={`px-3 py-1.5 rounded-full text-sm transition ${
+											className={`rounded-full px-3 py-1.5 text-sm transition ${
 												active
 													? "bg-accent text-white"
 													: "bg-[#2a2a2a] text-muted hover:bg-[#333]"
@@ -405,7 +428,7 @@ export default function PublicDiaryPage() {
 						</div>
 
 						<div>
-							<h4 className="text-xs uppercase tracking-wide text-muted mb-3">
+							<h4 className="mb-3 text-xs uppercase tracking-wide text-muted">
 								Streaming Service
 							</h4>
 
@@ -429,7 +452,7 @@ export default function PublicDiaryPage() {
 														: [...prev, service],
 												);
 											}}
-											className={`px-3 py-1.5 rounded-full text-sm transition ${
+											className={`rounded-full px-3 py-1.5 text-sm transition ${
 												active
 													? "bg-accent text-white"
 													: "bg-[#2a2a2a] text-muted hover:bg-[#333]"
@@ -449,7 +472,7 @@ export default function PublicDiaryPage() {
 						No entries found.
 					</p>
 				) : (
-					<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-6">
+					<div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7">
 						{searchedItems.map((entry) => (
 							<MediaCard
 								key={`${entry.type}-${entry.id}`}
@@ -467,7 +490,7 @@ export default function PublicDiaryPage() {
 					</div>
 				)}
 
-				<div className="flex justify-center mt-8 transition-all">
+				<div className="mt-8 flex justify-center transition-all">
 					<LoadMoreButton
 						onClick={() => console.log("Load more clicked")}
 					/>

@@ -1,45 +1,52 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { ExternalLink, Globe2, Lock } from "lucide-react";
+import { Film, Globe2, Lock, Pencil, Save, Users, X } from "lucide-react";
 
-import RecentlyLogged from "@/components/profile/recently-logged";
+import { createClient } from "@/lib/supabase/client";
 import ProfileBanner from "@/components/profile/profile-banner";
 import ProfileAvatar from "@/components/profile/profile-avatar";
-import ProfileInfo from "@/components/profile/profile-info";
-import ProfileStats from "@/components/profile/profile-stats";
-import BottomNav from "@/components/profile/bottom-nav";
-import Recommendations from "@/components/profile/recommendations";
+import ProfileDiaryStrip, {
+	ProfileAchievements,
+} from "@/components/profile/profile-diary-strip";
 import StreamingServices from "@/components/profile/streaming-services";
-import { createClient } from "@/lib/supabase/client";
 
 type ProfileData = {
-	banner_url: string;
-	avatar_url: string | null;
-	bio: string;
+	id: string;
 	display_name: string;
+	bio: string;
+	avatar_url: string | null;
+	banner_url: string;
 	is_private_diary: boolean;
 	created_at: string | null;
 };
 
-type ProfileRow = {
-	banner_url: string | null;
-	avatar_url: string | null;
-	bio: string | null;
-	display_name: string | null;
-	is_private_diary: boolean | null;
+type DiaryPreviewItem = {
+	id: number;
+	media_id: string;
+	media_type: "movie" | "tv";
+	title_snapshot: string | null;
+	poster_path_snapshot: string | null;
+	updated_at: string | null;
 	created_at: string | null;
 };
 
-const defaultProfile: ProfileData = {
-	banner_url: "/images/profile-banner.jpg",
-	avatar_url: null,
-	bio: "",
-	display_name: "User",
-	is_private_diary: true,
-	created_at: null,
-};
+const DEFAULT_BANNER = "/images/profile-banner.jpg";
+
+function getNameFromUser(user: {
+	email?: string | null;
+	user_metadata?: {
+		full_name?: string;
+		name?: string;
+	};
+}) {
+	return (
+		user.user_metadata?.full_name ||
+		user.user_metadata?.name ||
+		user.email ||
+		"User"
+	);
+}
 
 function formatJoined(date?: string | null) {
 	if (!date) return "Joined recently";
@@ -53,10 +60,18 @@ function formatJoined(date?: string | null) {
 export default function ProfilePage() {
 	const supabase = useMemo(() => createClient(), []);
 
-	const [userId, setUserId] = useState<string | null>(null);
 	const [profile, setProfile] = useState<ProfileData | null>(null);
+	const [diaryItems, setDiaryItems] = useState<DiaryPreviewItem[]>([]);
+	const [friendCount, setFriendCount] = useState(0);
 	const [loggedCount, setLoggedCount] = useState(0);
 	const [loading, setLoading] = useState(true);
+
+	const [editMode, setEditMode] = useState(false);
+	const [saving, setSaving] = useState(false);
+
+	const [draftDisplayName, setDraftDisplayName] = useState("");
+	const [draftBio, setDraftBio] = useState("");
+	const [draftPrivateDiary, setDraftPrivateDiary] = useState(true);
 
 	useEffect(() => {
 		async function loadProfile() {
@@ -67,16 +82,15 @@ export default function ProfilePage() {
 			} = await supabase.auth.getUser();
 
 			if (!user) {
+				setProfile(null);
 				setLoading(false);
 				return;
 			}
 
-			setUserId(user.id);
-
-			const { data, error } = await supabase
+			const { data: profileData, error } = await supabase
 				.from("profiles")
 				.select(
-					"bio, avatar_url, banner_url, display_name, is_private_diary, created_at",
+					"id, display_name, bio, avatar_url, banner_url, is_private_diary, created_at",
 				)
 				.eq("id", user.id)
 				.maybeSingle();
@@ -85,34 +99,59 @@ export default function ProfilePage() {
 				console.error(error.message);
 			}
 
-			const profileRow = data as ProfileRow | null;
+			const displayName =
+				profileData?.display_name || getNameFromUser(user);
 
-			const signedUpName =
-				user.user_metadata?.full_name ||
-				user.user_metadata?.name ||
-				user.email ||
-				"User";
-
-			setProfile({
-				banner_url: profileRow?.banner_url || defaultProfile.banner_url,
+			const loadedProfile: ProfileData = {
+				id: user.id,
+				display_name: displayName,
+				bio: profileData?.bio || "",
 				avatar_url:
-					profileRow?.avatar_url ||
+					profileData?.avatar_url ||
 					user.user_metadata?.avatar_url ||
-					defaultProfile.avatar_url,
-				bio: profileRow?.bio || defaultProfile.bio,
-				display_name: profileRow?.display_name || signedUpName,
-				is_private_diary:
-					profileRow?.is_private_diary ??
-					defaultProfile.is_private_diary,
-				created_at: profileRow?.created_at || user.created_at || null,
-			});
+					null,
+				banner_url: profileData?.banner_url || DEFAULT_BANNER,
+				is_private_diary: profileData?.is_private_diary ?? true,
+				created_at:
+					profileData?.created_at ||
+					user.created_at ||
+					new Date().toISOString(),
+			};
 
-			const { count } = await supabase
+			setProfile(loadedProfile);
+			setDraftDisplayName(loadedProfile.display_name);
+			setDraftBio(loadedProfile.bio);
+			setDraftPrivateDiary(loadedProfile.is_private_diary);
+
+			const { data: diaryData } = await supabase
+				.from("diary_entries")
+				.select(
+					"id, media_id, media_type, title_snapshot, poster_path_snapshot, updated_at, created_at",
+				)
+				.eq("user_id", user.id)
+				.order("updated_at", {
+					ascending: false,
+					nullsFirst: false,
+				})
+				.order("created_at", { ascending: false })
+				.limit(6);
+
+			setDiaryItems((diaryData ?? []) as DiaryPreviewItem[]);
+
+			const { count: loggedTotal } = await supabase
 				.from("diary_entries")
 				.select("id", { count: "exact", head: true })
 				.eq("user_id", user.id);
 
-			setLoggedCount(count ?? 0);
+			setLoggedCount(loggedTotal ?? 0);
+
+			const { count: friendsTotal } = await supabase
+				.from("friendships")
+				.select("id", { count: "exact", head: true })
+				.eq("user_id", user.id);
+
+			setFriendCount(friendsTotal ?? 0);
+
 			setLoading(false);
 		}
 
@@ -120,136 +159,301 @@ export default function ProfilePage() {
 	}, [supabase]);
 
 	async function updateProfile(updated: Partial<ProfileData>) {
-		if (!profile || !userId) return;
+		if (!profile) return;
 
 		const newProfile: ProfileData = {
-			banner_url: updated.banner_url ?? profile.banner_url,
-			avatar_url: updated.avatar_url ?? profile.avatar_url,
-			bio: updated.bio ?? profile.bio,
-			display_name: updated.display_name ?? profile.display_name,
-			is_private_diary:
-				updated.is_private_diary ?? profile.is_private_diary,
-			created_at: profile.created_at,
+			...profile,
+			...updated,
 		};
 
 		setProfile(newProfile);
 
-		const { error } = await supabase.from("profiles").upsert({
-			id: userId,
-			banner_url: newProfile.banner_url,
-			avatar_url: newProfile.avatar_url,
-			bio: newProfile.bio,
-			display_name: newProfile.display_name,
-			is_private_diary: newProfile.is_private_diary,
-			updated_at: new Date().toISOString(),
-		});
+		const { error } = await supabase.from("profiles").upsert(
+			{
+				id: newProfile.id,
+				display_name: newProfile.display_name,
+				bio: newProfile.bio,
+				avatar_url: newProfile.avatar_url,
+				banner_url: newProfile.banner_url,
+				is_private_diary: newProfile.is_private_diary,
+				updated_at: new Date().toISOString(),
+			},
+			{
+				onConflict: "id",
+			},
+		);
 
 		if (error) {
 			alert(error.message);
 		}
 	}
 
-	if (loading) return null;
+	async function handleSaveChanges() {
+		if (!profile) return;
+
+		try {
+			setSaving(true);
+
+			await updateProfile({
+				display_name: draftDisplayName.trim() || profile.display_name,
+				bio: draftBio,
+				is_private_diary: draftPrivateDiary,
+			});
+
+			setEditMode(false);
+		} finally {
+			setSaving(false);
+		}
+	}
+
+	function handleCancelEdit() {
+		if (!profile) return;
+
+		setDraftDisplayName(profile.display_name);
+		setDraftBio(profile.bio);
+		setDraftPrivateDiary(profile.is_private_diary);
+		setEditMode(false);
+	}
+
+	if (loading) {
+		return (
+			<main className="min-h-screen bg-black px-6 py-12 text-white">
+				Loading profile...
+			</main>
+		);
+	}
 
 	if (!profile) {
 		return (
-			<main className="flex min-h-screen items-center justify-center bg-black text-white">
+			<main className="flex min-h-screen items-center justify-center bg-black px-6 text-white">
 				<p>You need to log in to view your profile.</p>
 			</main>
 		);
 	}
 
 	return (
-		<main className="min-h-screen bg-black text-white pb-20 md:pb-0">
-			<ProfileBanner
-				src={profile.banner_url}
-				onChange={(banner_url) => updateProfile({ banner_url })}
-			/>
+		<main className="min-h-screen bg-black text-white">
+			<section>
+				<ProfileBanner
+					src={profile.banner_url}
+					editable={editMode}
+					onChange={(banner_url) => updateProfile({ banner_url })}
+				/>
 
-			<section className="relative z-10 -mt-20 px-6 md:px-24">
-				<div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-					<div className="flex flex-col gap-5 sm:flex-row sm:items-end">
-						<ProfileAvatar
-							src={profile.avatar_url}
-							name={profile.display_name}
-							onChange={(avatar_url) =>
-								updateProfile({ avatar_url })
-							}
-						/>
+				<div className="relative -mt-24 px-6 md:px-16">
+					<div className="flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
+						<div className="flex flex-col gap-6 md:flex-row md:items-end">
+							<ProfileAvatar
+								src={profile.avatar_url}
+								displayName={profile.display_name}
+								editable={editMode}
+								onChange={(avatar_url) =>
+									updateProfile({ avatar_url })
+								}
+							/>
 
-						<div className="pb-2">
-							<h1 className="text-3xl font-black leading-tight text-white md:text-5xl">
-								{profile.display_name}
-							</h1>
+							<div className="pb-4">
+								<h1 className="text-4xl font-black md:text-5xl">
+									{profile.display_name}
+								</h1>
 
-							<p className="mt-1 text-sm text-muted">
-								{formatJoined(profile.created_at)}
-							</p>
+								<p className="mt-2 text-muted">
+									{formatJoined(profile.created_at)}
+								</p>
 
-							<div
-								className={`mt-3 flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-xs uppercase tracking-wide ${
-									profile.is_private_diary
-										? "border-white/10 bg-white/[0.04] text-muted"
-										: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-								}`}
-							>
-								{profile.is_private_diary ? (
-									<Lock className="h-3.5 w-3.5" />
-								) : (
-									<Globe2 className="h-3.5 w-3.5" />
-								)}
+								<div className="mt-3 flex w-fit items-center gap-2 rounded-full border border-green-500/30 bg-green-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-green-300">
+									{profile.is_private_diary ? (
+										<>
+											<Lock className="h-3.5 w-3.5" />
+											Private diary
+										</>
+									) : (
+										<>
+											<Globe2 className="h-3.5 w-3.5" />
+											Public diary
+										</>
+									)}
+								</div>
 
-								{profile.is_private_diary
-									? "Private diary"
-									: "Public diary"}
+								<div className="mt-4">
+									<StreamingServices
+										userId={profile.id}
+										editable={editMode}
+									/>
+								</div>
+							</div>
+						</div>
+
+						<div className="flex flex-col items-center gap-6 pb-4 lg:min-w-[260px]">
+							<div className="flex gap-6">
+								<div className="text-center">
+									<div className="mb-2 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05]">
+										<Users className="h-6 w-6" />
+									</div>
+
+									<p className="text-xl font-bold">
+										{friendCount}
+									</p>
+
+									<p className="text-xs text-muted">
+										FRIENDS
+									</p>
+								</div>
+
+								<div className="text-center">
+									<div className="mb-2 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05]">
+										<Film className="h-6 w-6" />
+									</div>
+
+									<p className="text-xl font-bold">
+										{loggedCount}
+									</p>
+
+									<p className="text-xs text-muted">LOGGED</p>
+								</div>
 							</div>
 
-							<div className="mt-4">
-								<StreamingServices
-									userId={userId ?? undefined}
-									editable
-								/>
-							</div>
+							{!editMode && (
+								<button
+									type="button"
+									onClick={() => setEditMode(true)}
+									className="flex h-14 w-[180px] items-center justify-center gap-2 rounded-full bg-accent text-sm font-bold text-white shadow-lg shadow-accent/20 transition hover:bg-accent-hover"
+								>
+									<Pencil className="h-4 w-4" />
+									Edit profile
+								</button>
+							)}
 						</div>
 					</div>
 
-					<div className="flex flex-col items-start gap-4 lg:items-end lg:pb-4">
-						<ProfileStats
-							friendsCount={0}
-							loggedCount={loggedCount}
-						/>
+					{!editMode && (
+						<div className="mt-10 max-w-3xl">
+							<p className="whitespace-pre-line text-lg leading-8 text-gray-200">
+								{profile.bio ||
+									"You haven’t written a bio yet."}
+							</p>
+						</div>
+					)}
 
-						{userId && (
-							<Link
-								href={`/users/${userId}`}
-								className="flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-5 py-3 text-sm font-semibold hover:bg-white/[0.09]"
-							>
-								<ExternalLink className="h-4 w-4" />
-								View public profile
-							</Link>
-						)}
-					</div>
-				</div>
+					{editMode && (
+						<div className="mt-12 max-w-5xl rounded-3xl border border-white/10 bg-white/[0.025] p-6 md:p-8">
+							<div className="grid gap-6 md:grid-cols-2">
+								<div>
+									<label className="mb-2 block text-xs uppercase tracking-wide text-muted">
+										Display name
+									</label>
 
-				<div className="mt-10 max-w-3xl">
-					<ProfileInfo
-						displayName={profile.display_name}
-						bio={profile.bio}
-						isPrivateDiary={profile.is_private_diary}
-						onSave={(values) =>
-							updateProfile({
-								display_name: values.displayName,
-								bio: values.bio,
-								is_private_diary: values.isPrivateDiary,
-							})
-						}
-					/>
+									<input
+										value={draftDisplayName}
+										onChange={(event) =>
+											setDraftDisplayName(
+												event.target.value,
+											)
+										}
+										className="h-14 w-full rounded-2xl border border-white/10 bg-[#151515] px-5 text-white outline-none focus:border-accent"
+									/>
+								</div>
+							</div>
+
+							<div className="mt-6">
+								<div className="mb-2 flex items-center justify-between">
+									<label className="block text-xs uppercase tracking-wide text-muted">
+										Bio
+									</label>
+
+									<span className="text-xs text-muted">
+										{draftBio.length}/280
+									</span>
+								</div>
+
+								<textarea
+									value={draftBio}
+									maxLength={280}
+									onChange={(event) =>
+										setDraftBio(event.target.value)
+									}
+									placeholder="A little about you and your taste in movies..."
+									className="min-h-[140px] w-full resize-y rounded-2xl border border-white/10 bg-[#151515] px-5 py-4 text-white outline-none focus:border-accent"
+								/>
+							</div>
+
+							<div className="mt-6 flex items-center justify-between rounded-2xl border border-white/10 bg-[#151515] p-5">
+								<div className="flex items-start gap-3">
+									<Lock className="mt-1 h-5 w-5 text-white" />
+
+									<div>
+										<p className="font-bold text-white">
+											Private diary
+										</p>
+
+										<p className="mt-1 text-sm text-muted">
+											Only friends you approve can see
+											what you have been watching.
+										</p>
+									</div>
+								</div>
+
+								<button
+									type="button"
+									onClick={() =>
+										setDraftPrivateDiary((value) => !value)
+									}
+									className={`relative h-8 w-14 rounded-full transition ${
+										draftPrivateDiary
+											? "bg-accent"
+											: "bg-white/20"
+									}`}
+									aria-label="Toggle private diary"
+								>
+									<span
+										className={`absolute top-1 h-6 w-6 rounded-full bg-white transition ${
+											draftPrivateDiary
+												? "left-7"
+												: "left-1"
+										}`}
+									/>
+								</button>
+							</div>
+
+							<div className="mt-6 flex flex-wrap gap-3">
+								<button
+									type="button"
+									onClick={handleSaveChanges}
+									disabled={saving}
+									className="flex h-12 items-center justify-center gap-2 rounded-full bg-accent px-6 text-sm font-bold text-white transition hover:bg-accent-hover disabled:opacity-50"
+								>
+									<Save className="h-4 w-4" />
+									{saving ? "Saving..." : "Save changes"}
+								</button>
+
+								<button
+									type="button"
+									onClick={handleCancelEdit}
+									disabled={saving}
+									className="flex h-12 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-6 text-sm font-bold text-white transition hover:bg-white/[0.1] disabled:opacity-50"
+								>
+									<X className="h-4 w-4" />
+									Cancel
+								</button>
+							</div>
+						</div>
+					)}
 				</div>
 			</section>
 
-			<RecentlyLogged />
-			<Recommendations />
-			<BottomNav />
+			{!editMode && (
+				<>
+					<ProfileDiaryStrip
+						items={diaryItems}
+						displayName={profile.display_name}
+						isPrivate={profile.is_private_diary}
+						showViewAll={diaryItems.length > 0}
+						viewAllHref="/my-diary"
+					/>
+
+					<ProfileAchievements />
+				</>
+			)}
 		</main>
 	);
 }
