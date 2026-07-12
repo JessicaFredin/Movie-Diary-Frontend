@@ -1,21 +1,42 @@
-import { Icon } from "@iconify/react";
+import { Film, Users } from "lucide-react";
 
-export default function ProfileStats() {
+type Props = {
+	friendsCount?: number;
+	loggedCount?: number;
+};
+
+export default function ProfileStats({
+	friendsCount = 0,
+	loggedCount = 0,
+}: Props) {
 	return (
-		<div className="flex flex-col items-end gap-4  text-sm pr-6">
-			{/* Movies */}
+		<div className="flex items-center gap-6 text-sm">
 			<div className="flex flex-col items-center">
-				<Icon icon="fa-solid:user-friends" className="w-6 h-6" />
-				<span className="mt-1">783</span>
+				<div className="mb-2 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05]">
+					<Users className="h-5 w-5 text-white" />
+				</div>
+
+				<span className="text-lg font-bold text-white">
+					{friendsCount}
+				</span>
+
+				<span className="text-xs uppercase tracking-wide text-muted">
+					Friends
+				</span>
 			</div>
 
-			{/* Reviews */}
 			<div className="flex flex-col items-center">
-				<Icon
-					icon="pepicons-pop:clapperboard"
-					className="text-white w-6 h-6"
-				/>
-				<span className="mt-1">120</span>
+				<div className="mb-2 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05]">
+					<Film className="h-5 w-5 text-white" />
+				</div>
+
+				<span className="text-lg font-bold text-white">
+					{loggedCount}
+				</span>
+
+				<span className="text-xs uppercase tracking-wide text-muted">
+					Logged
+				</span>
 			</div>
 		</div>
 	);

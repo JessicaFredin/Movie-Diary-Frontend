@@ -76,6 +76,8 @@ type Props = {
 
 	onWatchlistRemove?: () => void | Promise<void>;
 	onWatchlistSave?: (status: SaveStatus) => void | Promise<void>;
+
+	readOnly?: boolean;
 };
 
 function getMediaType(media?: TmdbMedia, explicitType?: MediaType): MediaType {
@@ -161,6 +163,7 @@ export default function MediaCard({
 	initialDiaryEntry,
 	onWatchlistRemove,
 	onWatchlistSave,
+	readOnly = false,
 }: Props) {
 	const router = useRouter();
 	const supabase = useMemo(() => createClient(), []);
@@ -433,98 +436,102 @@ export default function MediaCard({
 						<div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/25 to-transparent" />
 
 						{/* ACTIONS */}
-						{isWatchlist ? (
-							<div className="absolute right-3 top-3 z-20 flex flex-col gap-2">
-								<button
-									type="button"
-									onClick={(e) => {
-										e.stopPropagation();
-										handleAddOrEditClick();
-									}}
-									disabled={checkingDiary}
-									className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-white shadow-lg transition hover:bg-accent-hover disabled:opacity-50"
-									title="Add to diary"
-								>
-									<Plus className="h-5 w-5" />
-								</button>
+						{!readOnly && (
+							<>
+								{isWatchlist ? (
+									<div className="absolute right-3 top-3 z-20 flex flex-col gap-2">
+										<button
+											type="button"
+											onClick={(e) => {
+												e.stopPropagation();
+												handleAddOrEditClick();
+											}}
+											disabled={checkingDiary}
+											className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-white shadow-lg transition hover:bg-accent-hover disabled:opacity-50"
+											title="Add to diary"
+										>
+											<Plus className="h-5 w-5" />
+										</button>
 
-								<button
-									type="button"
-									onClick={(e) => {
-										e.stopPropagation();
-										setConfirmDeleteOpen(true);
-									}}
-									disabled={deleting}
-									className="flex h-9 w-9 items-center justify-center rounded-full bg-black/70 text-white shadow-lg transition hover:bg-red-600 disabled:opacity-50"
-									title="Remove from watchlist"
-								>
-									<Trash2 className="h-4 w-4" />
-								</button>
-							</div>
-						) : !isAdded ? (
-							<div className="absolute right-3 top-3 z-20 flex flex-col gap-2">
-								<button
-									type="button"
-									onClick={(e) => {
-										e.stopPropagation();
-										handleAddOrEditClick();
-									}}
-									disabled={checkingDiary}
-									className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-white shadow-lg transition hover:bg-accent-hover disabled:opacity-50"
-									title={
-										isPlanned
-											? "Move to diary"
-											: "Add to diary"
-									}
-								>
-									<Plus className="h-5 w-5" />
-								</button>
+										<button
+											type="button"
+											onClick={(e) => {
+												e.stopPropagation();
+												setConfirmDeleteOpen(true);
+											}}
+											disabled={deleting}
+											className="flex h-9 w-9 items-center justify-center rounded-full bg-black/70 text-white shadow-lg transition hover:bg-red-600 disabled:opacity-50"
+											title="Remove from watchlist"
+										>
+											<Trash2 className="h-4 w-4" />
+										</button>
+									</div>
+								) : !isAdded ? (
+									<div className="absolute right-3 top-3 z-20 flex flex-col gap-2">
+										<button
+											type="button"
+											onClick={(e) => {
+												e.stopPropagation();
+												handleAddOrEditClick();
+											}}
+											disabled={checkingDiary}
+											className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-white shadow-lg transition hover:bg-accent-hover disabled:opacity-50"
+											title={
+												isPlanned
+													? "Move to diary"
+													: "Add to diary"
+											}
+										>
+											<Plus className="h-5 w-5" />
+										</button>
 
-								{isPlanned && (
-									<button
-										type="button"
-										onClick={(e) => {
-											e.stopPropagation();
-											setConfirmDeleteOpen(true);
-										}}
-										disabled={deleting}
-										className="flex h-9 w-9 items-center justify-center rounded-full bg-black/70 text-white shadow-lg transition hover:bg-red-600 disabled:opacity-50"
-										title="Remove from watchlist"
-									>
-										<Trash2 className="h-4 w-4" />
-									</button>
+										{isPlanned && (
+											<button
+												type="button"
+												onClick={(e) => {
+													e.stopPropagation();
+													setConfirmDeleteOpen(true);
+												}}
+												disabled={deleting}
+												className="flex h-9 w-9 items-center justify-center rounded-full bg-black/70 text-white shadow-lg transition hover:bg-red-600 disabled:opacity-50"
+												title="Remove from watchlist"
+											>
+												<Trash2 className="h-4 w-4" />
+											</button>
+										)}
+									</div>
+								) : (
+									<div className="absolute right-3 top-3 z-20 flex flex-col gap-2">
+										<button
+											type="button"
+											onClick={(e) => {
+												e.stopPropagation();
+												handleAddOrEditClick();
+											}}
+											disabled={checkingDiary}
+											className="flex h-9 w-9 items-center justify-center rounded-full bg-black/70 text-white shadow-lg transition hover:bg-accent disabled:opacity-50"
+											title="Edit diary entry"
+										>
+											<Pencil className="h-4 w-4" />
+										</button>
+
+										{showDeleteButton && (
+											<button
+												type="button"
+												onClick={(e) => {
+													e.stopPropagation();
+													setConfirmDeleteOpen(true);
+												}}
+												disabled={deleting}
+												className="flex h-9 w-9 items-center justify-center rounded-full bg-black/70 text-white shadow-lg transition hover:bg-red-600 disabled:opacity-50"
+												title="Remove from diary"
+											>
+												<Trash2 className="h-4 w-4" />
+											</button>
+										)}
+									</div>
 								)}
-							</div>
-						) : (
-							<div className="absolute right-3 top-3 z-20 flex flex-col gap-2">
-								<button
-									type="button"
-									onClick={(e) => {
-										e.stopPropagation();
-										handleAddOrEditClick();
-									}}
-									disabled={checkingDiary}
-									className="flex h-9 w-9 items-center justify-center rounded-full bg-black/70 text-white shadow-lg transition hover:bg-accent disabled:opacity-50"
-									title="Edit diary entry"
-								>
-									<Pencil className="h-4 w-4" />
-								</button>
-
-								{showDeleteButton && (
-									<button
-										type="button"
-										onClick={(e) => {
-											e.stopPropagation();
-											setConfirmDeleteOpen(true);
-										}}
-										disabled={deleting}
-										className="flex h-9 w-9 items-center justify-center rounded-full bg-black/70 text-white shadow-lg transition hover:bg-red-600 disabled:opacity-50"
-										title="Remove from diary"
-									>
-										<Trash2 className="h-4 w-4" />
-									</button>
-								)}
-							</div>
+							</>
 						)}
 
 						{/* BOTTOM INFO */}
