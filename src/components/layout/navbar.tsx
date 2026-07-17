@@ -20,6 +20,7 @@ import { createClient } from "@/lib/supabase/client";
 import NotificationDropdown from "@/components/notifications/notification-dropdown";
 import MobileNotifications from "@/components/notifications/mobile-notifications";
 import NavbarSearch from "./navbar-search";
+import { countPendingNotifications } from "@/utils/notifications";
 
 const navItems = [
 	{ name: "Login", href: "/login", auth: "guest" },
@@ -65,33 +66,10 @@ export default function Navbar() {
 	const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 	const [unreadCount, setUnreadCount] = useState(0);
 
-	const loadNotificationCount = useCallback(
-		async (userId: string) => {
-			const { count: diaryCount, error: diaryError } = await supabase
-				.from("diary_access_requests")
-				.select("id", { count: "exact", head: true })
-				.eq("owner_id", userId)
-				.eq("status", "pending");
-
-			const { count: friendCount, error: friendError } = await supabase
-				.from("friend_requests")
-				.select("id", { count: "exact", head: true })
-				.eq("receiver_id", userId)
-				.eq("status", "pending");
-
-			if (diaryError || friendError) {
-				console.error(
-					"Failed to load notification count:",
-					diaryError?.message || friendError?.message,
-				);
-				setUnreadCount(0);
-				return;
-			}
-
-			setUnreadCount((diaryCount ?? 0) + (friendCount ?? 0));
-		},
-		[supabase],
-	);
+	const loadNotificationCount = useCallback(async () => {
+		const count = await countPendingNotifications(supabase);
+		setUnreadCount(count);
+	}, [supabase]);
 
 	const loadUser = useCallback(async () => {
 		const {
@@ -111,7 +89,7 @@ export default function Navbar() {
 			.from("profiles")
 			.select("display_name, avatar_url")
 			.eq("id", authUser.id)
-			.single();
+			.maybeSingle();
 
 		setDisplayName(
 			profile?.display_name ||
@@ -123,16 +101,16 @@ export default function Navbar() {
 
 		setAvatarUrl(profile?.avatar_url || null);
 
-		await loadNotificationCount(authUser.id);
+		await loadNotificationCount();
 	}, [supabase, loadNotificationCount]);
 
 	useEffect(() => {
-		loadUser();
+		void loadUser();
 
 		const {
 			data: { subscription },
 		} = supabase.auth.onAuthStateChange(() => {
-			loadUser();
+			void loadUser();
 		});
 
 		function handleAvatarUpdated(event: Event) {
@@ -154,7 +132,7 @@ export default function Navbar() {
 	useEffect(() => {
 		function handleFocus() {
 			if (user?.id) {
-				loadNotificationCount(user.id);
+				void loadNotificationCount();
 			}
 		}
 
@@ -169,6 +147,8 @@ export default function Navbar() {
 		await supabase.auth.signOut();
 		setProfileOpen(false);
 		setOpen(false);
+		setNotifOpen(false);
+		setMobileNotifOpen(false);
 		router.push("/login");
 		router.refresh();
 	};
@@ -179,7 +159,7 @@ export default function Navbar() {
 	});
 
 	return (
-		<nav className="bg-surface-dark text-white py-4 shadow-md sticky top-0 left-0 right-0 z-50">
+		<nav className="sticky top-0 left-0 right-0 z-50 bg-surface-dark py-4 text-white shadow-md">
 			<div className="flex items-center justify-between px-6 lg:px-12">
 				{/* Logo */}
 				<Link href="/">
@@ -188,7 +168,7 @@ export default function Navbar() {
 						alt="Movie Diary Logo"
 						width={2000}
 						height={1000}
-						className="w-[100px] h-auto"
+						className="h-auto w-[100px]"
 						priority
 					/>
 				</Link>
@@ -196,7 +176,7 @@ export default function Navbar() {
 				<NavbarSearch />
 
 				{/* Desktop links */}
-				<ul className="hidden md:flex items-center gap-6">
+				<ul className="hidden items-center gap-6 md:flex">
 					{visibleNavItems.map((item) => (
 						<li key={item.href}>
 							<Link
@@ -205,7 +185,7 @@ export default function Navbar() {
 									pathname === item.href
 										? "text-accent"
 										: "text-muted"
-								} hover:text-white transition`}
+								} transition hover:text-white`}
 							>
 								{item.name}
 							</Link>
@@ -220,19 +200,15 @@ export default function Navbar() {
 									type="button"
 									onClick={async () => {
 										setNotifOpen((value) => !value);
-
-										if (user.id) {
-											await loadNotificationCount(
-												user.id,
-											);
-										}
+										await loadNotificationCount();
 									}}
 									className="relative"
+									aria-label="Notifications"
 								>
-									<Bell className="w-5 h-5 text-muted hover:text-white" />
+									<Bell className="h-5 w-5 text-muted hover:text-white" />
 
 									{unreadCount > 0 && (
-										<span className="absolute -top-2 -right-2 bg-accent text-xs w-5 h-5 flex items-center justify-center rounded-full">
+										<span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-xs">
 											{unreadCount > 9
 												? "9+"
 												: unreadCount}
@@ -242,7 +218,10 @@ export default function Navbar() {
 
 								{notifOpen && (
 									<NotificationDropdown
-										onClose={() => setNotifOpen(false)}
+										onClose={() => {
+											setNotifOpen(false);
+											void loadNotificationCount();
+										}}
 										onCountChange={setUnreadCount}
 									/>
 								)}
@@ -252,14 +231,17 @@ export default function Navbar() {
 							<li className="relative">
 								<button
 									type="button"
-									onClick={() => setProfileOpen((v) => !v)}
-									className="w-9 h-9 rounded-full overflow-hidden cursor-pointer focus:outline-none border border-accent"
+									onClick={() =>
+										setProfileOpen((value) => !value)
+									}
+									className="h-9 w-9 cursor-pointer overflow-hidden rounded-full border border-accent focus:outline-none"
+									aria-label="Profile menu"
 								>
 									{avatarUrl ? (
 										<Image
 											src={avatarUrl}
 											alt={displayName}
-											className="object-cover w-full h-full"
+											className="h-full w-full object-cover"
 											width={36}
 											height={36}
 										/>
@@ -271,7 +253,7 @@ export default function Navbar() {
 								</button>
 
 								{profileOpen && (
-									<div className="absolute right-0 mt-2 w-48 rounded-lg bg-surface-elevated shadow-lg z-50 overflow-hidden">
+									<div className="absolute right-0 z-50 mt-2 w-48 overflow-hidden rounded-lg bg-surface-elevated shadow-lg">
 										{profileNavItems.map((item) => {
 											const Icon = item.icon;
 
@@ -284,7 +266,7 @@ export default function Navbar() {
 													}
 													className="block px-4 py-2 hover:bg-surface-neutral"
 												>
-													<Icon className="w-4 h-4 inline mr-2" />
+													<Icon className="mr-2 inline h-4 w-4" />
 													{item.label}
 												</Link>
 											);
@@ -293,9 +275,9 @@ export default function Navbar() {
 										<button
 											type="button"
 											onClick={logout}
-											className="w-full text-left px-4 py-2 hover:bg-surface-neutral"
+											className="w-full px-4 py-2 text-left hover:bg-surface-neutral"
 										>
-											<LogOut className="w-4 h-4 inline mr-2" />
+											<LogOut className="mr-2 inline h-4 w-4" />
 											Log out
 										</button>
 									</div>
@@ -306,20 +288,21 @@ export default function Navbar() {
 				</ul>
 
 				{/* Mobile */}
-				<div className="md:hidden flex items-center gap-4">
+				<div className="flex items-center gap-4 md:hidden">
 					{user && (
 						<button
 							type="button"
 							onClick={async () => {
-								await loadNotificationCount(user.id);
+								await loadNotificationCount();
 								setMobileNotifOpen(true);
 							}}
 							className="relative"
+							aria-label="Notifications"
 						>
 							<Bell />
 
 							{unreadCount > 0 && (
-								<span className="absolute -top-2 -right-2 bg-accent text-xs w-5 h-5 flex items-center justify-center rounded-full">
+								<span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-xs">
 									{unreadCount > 9 ? "9+" : unreadCount}
 								</span>
 							)}
@@ -328,23 +311,28 @@ export default function Navbar() {
 
 					<button
 						type="button"
-						onClick={() => setOpen((v) => !v)}
+						onClick={() => setOpen((value) => !value)}
 						className="md:hidden"
+						aria-label="Menu"
 					>
-						<Menu className="w-6 h-6" />
+						<Menu className="h-6 w-6" />
 					</button>
 				</div>
 			</div>
 
 			{mobileNotifOpen && (
 				<MobileNotifications
-					onClose={() => setMobileNotifOpen(false)}
+					onClose={() => {
+						setMobileNotifOpen(false);
+						void loadNotificationCount();
+					}}
+					onCountChange={setUnreadCount}
 				/>
 			)}
 
 			{/* Mobile dropdown */}
 			{open && (
-				<div className="md:hidden mt-4 space-y-3 px-6">
+				<div className="mt-4 space-y-3 px-6 md:hidden">
 					{visibleNavItems.map((item) => (
 						<Link
 							key={item.href}

@@ -1,64 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Lock, UserPlus } from "lucide-react";
+import { Bell } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-
-type RequestStatus = "pending" | "accepted" | "declined" | "cancelled";
-
-type DiaryAccessRequest = {
-	id: number;
-	requester_id: string;
-	status: RequestStatus;
-	created_at: string;
-};
-
-type FriendRequest = {
-	id: number;
-	requester_id: string;
-	status: RequestStatus;
-	created_at: string;
-};
-
-type ProfileRow = {
-	id: string;
-	display_name: string | null;
-	avatar_url: string | null;
-};
-
-type NotificationItem = {
-	id: number;
-	kind: "diary_access" | "friend_request";
-	requesterId: string;
-	displayName: string;
-	avatarUrl: string | null;
-	createdAt: string;
-};
+import {
+	fetchPendingNotifications,
+	formatNotificationTime,
+	respondToNotification,
+	type PendingNotification,
+} from "@/utils/notifications";
 
 type Props = {
 	onClose: () => void;
 	onCountChange?: (count: number) => void;
 };
-
-function getInitials(name: string) {
-	return name.trim().slice(0, 1).toUpperCase() || "U";
-}
-
-function formatRelativeTime(date: string) {
-	const now = Date.now();
-	const then = new Date(date).getTime();
-	const diffMs = Math.max(0, now - then);
-
-	const minutes = Math.floor(diffMs / 60000);
-	const hours = Math.floor(minutes / 60);
-	const days = Math.floor(hours / 24);
-
-	if (minutes < 1) return "Just now";
-	if (minutes < 60) return `${minutes}m ago`;
-	if (hours < 24) return `${hours}h ago`;
-	return `${days}d ago`;
-}
 
 export default function NotificationDropdown({
 	onClose,
@@ -66,188 +22,154 @@ export default function NotificationDropdown({
 }: Props) {
 	const supabase = useMemo(() => createClient(), []);
 
-	const [items, setItems] = useState<NotificationItem[]>([]);
+	const [notifications, setNotifications] = useState<PendingNotification[]>(
+		[],
+	);
 	const [loading, setLoading] = useState(true);
+	const [actingId, setActingId] = useState<string | null>(null);
 
-	const loadNotifications = useCallback(async () => {
+	async function loadNotifications() {
 		setLoading(true);
 
-		const {
-			data: { user },
-		} = await supabase.auth.getUser();
-
-		if (!user) {
-			setItems([]);
+		try {
+			const items = await fetchPendingNotifications(supabase);
+			setNotifications(items);
+			onCountChange?.(items.length);
+		} catch (error) {
+			console.error("Failed to load notifications:", error);
+			setNotifications([]);
 			onCountChange?.(0);
+		} finally {
 			setLoading(false);
-			return;
 		}
-
-		const { data: diaryData } = await supabase
-			.from("diary_access_requests")
-			.select("id, requester_id, status, created_at")
-			.eq("owner_id", user.id)
-			.eq("status", "pending")
-			.order("created_at", { ascending: false })
-			.limit(5);
-
-		const { data: friendData } = await supabase
-			.from("friend_requests")
-			.select("id, requester_id, status, created_at")
-			.eq("receiver_id", user.id)
-			.eq("status", "pending")
-			.order("created_at", { ascending: false })
-			.limit(5);
-
-		const diaryRequests = (diaryData ?? []) as DiaryAccessRequest[];
-		const friendRequests = (friendData ?? []) as FriendRequest[];
-
-		const totalPending = diaryRequests.length + friendRequests.length;
-		onCountChange?.(totalPending);
-
-		const requesterIds = Array.from(
-			new Set([
-				...diaryRequests.map((request) => request.requester_id),
-				...friendRequests.map((request) => request.requester_id),
-			]),
-		);
-
-		if (requesterIds.length === 0) {
-			setItems([]);
-			setLoading(false);
-			return;
-		}
-
-		const { data: profilesData } = await supabase
-			.from("profiles")
-			.select("id, display_name, avatar_url")
-			.in("id", requesterIds);
-
-		const profiles = (profilesData ?? []) as ProfileRow[];
-
-		const profileMap = new Map<string, ProfileRow>(
-			profiles.map((profile) => [profile.id, profile]),
-		);
-
-		const notificationItems: NotificationItem[] = [
-			...diaryRequests.map((request) => {
-				const profile = profileMap.get(request.requester_id);
-
-				return {
-					id: request.id,
-					kind: "diary_access" as const,
-					requesterId: request.requester_id,
-					displayName: profile?.display_name ?? "Unknown user",
-					avatarUrl: profile?.avatar_url ?? null,
-					createdAt: request.created_at,
-				};
-			}),
-			...friendRequests.map((request) => {
-				const profile = profileMap.get(request.requester_id);
-
-				return {
-					id: request.id,
-					kind: "friend_request" as const,
-					requesterId: request.requester_id,
-					displayName: profile?.display_name ?? "Unknown user",
-					avatarUrl: profile?.avatar_url ?? null,
-					createdAt: request.created_at,
-				};
-			}),
-		]
-			.sort(
-				(a, b) =>
-					new Date(b.createdAt).getTime() -
-					new Date(a.createdAt).getTime(),
-			)
-			.slice(0, 5);
-
-		setItems(notificationItems);
-		setLoading(false);
-	}, [supabase, onCountChange]);
+	}
 
 	useEffect(() => {
 		loadNotifications();
-	}, [loadNotifications]);
+	}, []);
+
+	async function handleRespond(
+		notification: PendingNotification,
+		action: "accepted" | "declined",
+	) {
+		try {
+			setActingId(notification.id);
+			await respondToNotification(supabase, notification, action);
+			await loadNotifications();
+		} catch (error) {
+			console.error(error);
+			alert(
+				error instanceof Error
+					? error.message
+					: "Something went wrong.",
+			);
+		} finally {
+			setActingId(null);
+		}
+	}
 
 	return (
-		<div className="absolute right-0 mt-3 w-[380px] max-h-[500px] bg-surface-elevated border border-border rounded-2xl shadow-2xl overflow-hidden z-50">
-			<div className="flex items-center justify-between px-4 py-3 border-b border-border">
-				<h3 className="font-semibold">Notifications</h3>
+		<div className="absolute right-0 mt-3 w-[380px] max-h-[520px] overflow-hidden rounded-2xl border border-border bg-surface-elevated shadow-2xl z-50">
+			<div className="flex items-center justify-between border-b border-border px-5 py-4">
+				<h3 className="text-lg font-bold text-white">Notifications</h3>
 
 				<button
 					type="button"
 					onClick={onClose}
-					className="text-xs text-muted hover:text-foreground"
+					className="text-sm text-muted hover:text-white"
 				>
 					Close
 				</button>
 			</div>
 
-			<div className="max-h-[420px] overflow-y-auto custom-scrollbar">
+			<div className="max-h-[380px] overflow-y-auto">
 				{loading ? (
-					<div className="px-4 py-6 text-sm text-muted">
+					<p className="px-5 py-8 text-sm text-muted">
 						Loading notifications...
-					</div>
-				) : items.length === 0 ? (
-					<div className="px-4 py-6 text-sm text-muted">
+					</p>
+				) : notifications.length === 0 ? (
+					<p className="px-5 py-8 text-sm text-muted">
 						No new notifications.
-					</div>
+					</p>
 				) : (
-					items.map((item) => (
-						<Link
-							key={`${item.kind}-${item.id}`}
-							href="/notifications"
-							onClick={onClose}
-							className="block px-4 py-3 border-b border-border bg-accent/5 hover:bg-surface-neutral transition"
-						>
-							<div className="flex items-start gap-3">
-								<div className="w-9 h-9 rounded-full bg-surface-neutral flex items-center justify-center overflow-hidden">
-									{item.avatarUrl ? (
-										<img
-											src={item.avatarUrl}
-											alt={item.displayName}
-											className="h-full w-full object-cover"
-										/>
-									) : (
-										<span className="text-xs font-bold text-white">
-											{getInitials(item.displayName)}
-										</span>
-									)}
-								</div>
+					notifications.map((notification) => {
+						const busy = actingId === notification.id;
 
-								<div className="flex-1 text-sm">
-									<p>
-										<span className="font-medium">
-											{item.displayName}
-										</span>{" "}
-										<span className="text-muted">
-											{item.kind === "friend_request"
-												? "sent you a friend request"
-												: "requested access to your private diary"}
-										</span>
-									</p>
-
-									<p className="mt-1 flex items-center gap-1 text-xs text-muted">
-										{item.kind === "friend_request" ? (
-											<UserPlus className="h-3 w-3" />
+						return (
+							<div
+								key={notification.id}
+								className="border-b border-border px-5 py-4 transition hover:bg-surface-neutral"
+							>
+								<div className="flex gap-3">
+									<Link
+										href={`/users/${notification.actorId}`}
+										onClick={onClose}
+										className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-neutral"
+									>
+										{notification.actorAvatar ? (
+											<img
+												src={notification.actorAvatar}
+												alt={notification.actorName}
+												className="h-full w-full object-cover"
+											/>
 										) : (
-											<Lock className="h-3 w-3" />
+											<Bell className="h-4 w-4 text-accent" />
 										)}
-										{formatRelativeTime(item.createdAt)}
-									</p>
+									</Link>
+
+									<div className="min-w-0 flex-1">
+										<p className="text-sm leading-5 text-white">
+											{notification.title}
+										</p>
+
+										<p className="mt-1 text-xs text-muted">
+											{formatNotificationTime(
+												notification.createdAt,
+											)}
+										</p>
+
+										<div className="mt-3 flex gap-2">
+											<button
+												type="button"
+												disabled={busy}
+												onClick={() =>
+													handleRespond(
+														notification,
+														"accepted",
+													)
+												}
+												className="rounded-full bg-accent px-4 py-1.5 text-xs font-bold text-white transition hover:bg-accent-hover disabled:opacity-60"
+											>
+												Accept
+											</button>
+
+											<button
+												type="button"
+												disabled={busy}
+												onClick={() =>
+													handleRespond(
+														notification,
+														"declined",
+													)
+												}
+												className="rounded-full border border-white/10 bg-white/[0.05] px-4 py-1.5 text-xs font-bold text-white transition hover:bg-white/[0.1] disabled:opacity-60"
+											>
+												Decline
+											</button>
+										</div>
+									</div>
 								</div>
 							</div>
-						</Link>
-					))
+						);
+					})
 				)}
 			</div>
 
-			<div className="px-4 py-3 border-t border-border text-center">
+			<div className="border-t border-border px-5 py-4 text-center">
 				<Link
 					href="/notifications"
 					onClick={onClose}
-					className="text-sm text-accent hover:underline"
+					className="text-sm font-bold text-accent hover:underline"
 				>
 					View all notifications
 				</Link>

@@ -202,9 +202,9 @@ export default function PublicUserProfilePage() {
 					<div className="absolute inset-0 bg-gradient-to-t from-black via-black/45 to-black/10" />
 				</div>
 
-				<div className="relative -mt-24 px-6 md:px-16">
-					<div className="flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
-						<div className="flex flex-col gap-6 md:flex-row md:items-end">
+				<div className="relative -mt-24 px-5 md:px-16">
+					<div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+						<div className="flex flex-col gap-5 md:flex-row md:items-end md:gap-6">
 							<div className="h-36 w-36 shrink-0 overflow-hidden rounded-full border-4 border-accent bg-slate-500 shadow-[0_0_22px_#FF414E] md:h-44 md:w-44">
 								{profile.avatar_url ? (
 									<img
@@ -219,25 +219,86 @@ export default function PublicUserProfilePage() {
 								)}
 							</div>
 
-							<div className="pb-4">
-								<h1 className="text-4xl font-black md:text-5xl">
-									{displayName}
-								</h1>
+							<div className="flex w-full items-start justify-between gap-4 pb-0 md:block md:w-auto md:pb-4">
+								<div className="min-w-0">
+									<h1 className="text-3xl font-black leading-tight md:text-5xl">
+										{displayName}
+									</h1>
 
-								<p className="mt-2 text-muted">
-									{formatJoined(profile.created_at)}
-								</p>
+									<p className="mt-1 text-sm text-muted md:mt-2 md:text-base">
+										{formatJoined(profile.created_at)}
+									</p>
 
-								<div className="mt-4">
-									<StreamingServices
-										userId={profile.id}
-										editable={false}
-									/>
+									<div className="mt-3 md:mt-4">
+										<StreamingServices
+											userId={profile.id}
+											editable={false}
+										/>
+									</div>
+								</div>
+
+								<div className="flex shrink-0 flex-col items-center gap-3 md:hidden">
+									<div className="flex gap-3">
+										<div className="text-center">
+											<div className="mb-1 flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05]">
+												<Users className="h-4 w-4" />
+											</div>
+
+											<p className="text-sm font-bold leading-none">
+												{friendCount}
+											</p>
+
+											<p className="mt-1 text-[9px] text-muted">
+												FRIENDS
+											</p>
+										</div>
+
+										<div className="text-center">
+											<div className="mb-1 flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05]">
+												<Film className="h-4 w-4" />
+											</div>
+
+											<p className="text-sm font-bold leading-none">
+												{loggedCount}
+											</p>
+
+											<p className="mt-1 text-[9px] text-muted">
+												LOGGED
+											</p>
+										</div>
+									</div>
+
+									{isOwnProfile ? (
+										<Link
+											href="/profile"
+											className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent p-0 text-white shadow-lg shadow-accent/20 transition hover:bg-accent-hover"
+											title="Edit profile"
+											aria-label="Edit profile"
+										>
+											<Pencil className="h-4 w-4" />
+										</Link>
+									) : (
+										<div className="flex items-center gap-2">
+											<AddFriendButton
+												profileId={profile.id}
+												variant="icon"
+											/>
+
+											<button
+												type="button"
+												className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05] p-0 text-white transition hover:bg-white/[0.1]"
+												title="Message"
+												aria-label="Message"
+											>
+												<MessageCircle className="h-4 w-4" />
+											</button>
+										</div>
+									)}
 								</div>
 							</div>
 						</div>
 
-						<div className="flex flex-col items-center gap-6 pb-4 lg:min-w-[260px]">
+						<div className="hidden flex-col items-center gap-6 pb-4 md:flex lg:min-w-[260px]">
 							<div className="flex gap-6">
 								<div className="text-center">
 									<div className="mb-2 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05]">
@@ -247,6 +308,7 @@ export default function PublicUserProfilePage() {
 									<p className="text-xl font-bold">
 										{friendCount}
 									</p>
+
 									<p className="text-xs text-muted">
 										FRIENDS
 									</p>
@@ -260,6 +322,7 @@ export default function PublicUserProfilePage() {
 									<p className="text-xl font-bold">
 										{loggedCount}
 									</p>
+
 									<p className="text-xs text-muted">LOGGED</p>
 								</div>
 							</div>
@@ -288,8 +351,8 @@ export default function PublicUserProfilePage() {
 						</div>
 					</div>
 
-					<div className="mt-10 max-w-3xl">
-						<p className="whitespace-pre-line text-lg leading-8 text-gray-200">
+					<div className="mt-8 max-w-3xl md:mt-10">
+						<p className="whitespace-pre-line text-sm leading-6 text-gray-200 md:text-lg md:leading-8">
 							{profile.bio ||
 								"This user has not written a bio yet."}
 						</p>

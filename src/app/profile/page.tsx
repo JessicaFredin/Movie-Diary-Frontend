@@ -240,51 +240,100 @@ export default function ProfilePage() {
 					onChange={(banner_url) => updateProfile({ banner_url })}
 				/>
 
-				<div className="relative -mt-24 px-6 md:px-16">
-					<div className="flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
-						<div className="flex flex-col gap-6 md:flex-row md:items-end">
-							<ProfileAvatar
-								src={profile.avatar_url}
-								displayName={profile.display_name}
-								editable={editMode}
-								onChange={(avatar_url) =>
-									updateProfile({ avatar_url })
-								}
-							/>
+				<div className="relative -mt-24 px-5 md:px-16">
+					<div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+						<div className="flex flex-col gap-5 md:flex-row md:items-end md:gap-6">
+							<div className="relative h-[145px] w-[145px] md:h-auto md:w-auto">
+								<div className="absolute left-0 top-0 origin-top-left scale-[0.82] md:static md:scale-100">
+									<ProfileAvatar
+										src={profile.avatar_url}
+										displayName={profile.display_name}
+										editable={editMode}
+										onChange={(avatar_url) =>
+											updateProfile({ avatar_url })
+										}
+									/>
+								</div>
+							</div>
 
-							<div className="pb-4">
-								<h1 className="text-4xl font-black md:text-5xl">
-									{profile.display_name}
-								</h1>
+							<div className="flex w-full items-start justify-between gap-4 pb-0 md:block md:w-auto md:pb-4">
+								<div className="min-w-0">
+									<h1 className="text-3xl font-black leading-tight md:text-5xl">
+										{profile.display_name}
+									</h1>
 
-								<p className="mt-2 text-muted">
-									{formatJoined(profile.created_at)}
-								</p>
+									<p className="mt-1 text-sm text-muted md:mt-2 md:text-base">
+										{formatJoined(profile.created_at)}
+									</p>
 
-								<div className="mt-3 flex w-fit items-center gap-2 rounded-full border border-green-500/30 bg-green-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-green-300">
-									{profile.is_private_diary ? (
-										<>
-											<Lock className="h-3.5 w-3.5" />
-											Private diary
-										</>
-									) : (
-										<>
-											<Globe2 className="h-3.5 w-3.5" />
-											Public diary
-										</>
-									)}
+									<div className="mt-2 flex w-fit items-center gap-1.5 rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-green-300 md:mt-3 md:gap-2 md:px-4 md:py-1.5 md:text-xs">
+										{profile.is_private_diary ? (
+											<>
+												<Lock className="h-3 w-3 md:h-3.5 md:w-3.5" />
+												Private diary
+											</>
+										) : (
+											<>
+												<Globe2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
+												Public diary
+											</>
+										)}
+									</div>
+
+									<div className="mt-3 md:mt-4">
+										<StreamingServices
+											userId={profile.id}
+											editable={editMode}
+										/>
+									</div>
 								</div>
 
-								<div className="mt-4">
-									<StreamingServices
-										userId={profile.id}
-										editable={editMode}
-									/>
+								<div className="flex shrink-0 flex-col items-center gap-3 md:hidden">
+									<div className="flex gap-3">
+										<div className="text-center">
+											<div className="mb-1 flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05]">
+												<Users className="h-4 w-4" />
+											</div>
+
+											<p className="text-sm font-bold leading-none">
+												{friendCount}
+											</p>
+
+											<p className="mt-1 text-[9px] text-muted">
+												FRIENDS
+											</p>
+										</div>
+
+										<div className="text-center">
+											<div className="mb-1 flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05]">
+												<Film className="h-4 w-4" />
+											</div>
+
+											<p className="text-sm font-bold leading-none">
+												{loggedCount}
+											</p>
+
+											<p className="mt-1 text-[9px] text-muted">
+												LOGGED
+											</p>
+										</div>
+									</div>
+
+									{!editMode && (
+										<button
+											type="button"
+											onClick={() => setEditMode(true)}
+											className="flex h-9 w-[104px] items-center justify-center gap-1.5 rounded-full bg-accent text-xs font-bold text-white shadow-lg shadow-accent/20 transition hover:bg-accent-hover"
+										>
+											<Pencil className="h-3.5 w-3.5" />
+											Edit
+										</button>
+									)}
 								</div>
 							</div>
 						</div>
 
-						<div className="flex flex-col items-center gap-6 pb-4 lg:min-w-[260px]">
+						<div className="hidden flex-col items-center gap-6 pb-4 lg:flex lg:min-w-[260px]">
 							<div className="flex gap-6">
 								<div className="text-center">
 									<div className="mb-2 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05]">
@@ -327,8 +376,8 @@ export default function ProfilePage() {
 					</div>
 
 					{!editMode && (
-						<div className="mt-10 max-w-3xl">
-							<p className="whitespace-pre-line text-lg leading-8 text-gray-200">
+						<div className="mt-8 max-w-3xl md:mt-10">
+							<p className="whitespace-pre-line text-sm leading-6 text-gray-200 md:text-lg md:leading-8">
 								{profile.bio ||
 									"You haven’t written a bio yet."}
 							</p>
@@ -336,7 +385,7 @@ export default function ProfilePage() {
 					)}
 
 					{editMode && (
-						<div className="mt-12 max-w-5xl rounded-3xl border border-white/10 bg-white/[0.025] p-6 md:p-8">
+						<div className="mt-8 max-w-5xl rounded-3xl border border-white/10 bg-white/[0.025] p-4 md:mt-12 md:p-8">
 							<div className="grid gap-6 md:grid-cols-2">
 								<div>
 									<label className="mb-2 block text-xs uppercase tracking-wide text-muted">
@@ -350,12 +399,12 @@ export default function ProfilePage() {
 												event.target.value,
 											)
 										}
-										className="h-14 w-full rounded-2xl border border-white/10 bg-[#151515] px-5 text-white outline-none focus:border-accent"
+										className="h-11 w-full rounded-2xl border border-white/10 bg-[#151515] px-4 text-sm text-white outline-none focus:border-accent md:h-14 md:px-5 md:text-base"
 									/>
 								</div>
 							</div>
 
-							<div className="mt-6">
+							<div className="mt-5 md:mt-6">
 								<div className="mb-2 flex items-center justify-between">
 									<label className="block text-xs uppercase tracking-wide text-muted">
 										Bio
@@ -373,20 +422,20 @@ export default function ProfilePage() {
 										setDraftBio(event.target.value)
 									}
 									placeholder="A little about you and your taste in movies..."
-									className="min-h-[140px] w-full resize-y rounded-2xl border border-white/10 bg-[#151515] px-5 py-4 text-white outline-none focus:border-accent"
+									className="min-h-[110px] w-full resize-y rounded-2xl border border-white/10 bg-[#151515] px-4 py-3 text-sm text-white outline-none focus:border-accent md:min-h-[140px] md:px-5 md:py-4 md:text-base"
 								/>
 							</div>
 
-							<div className="mt-6 flex items-center justify-between rounded-2xl border border-white/10 bg-[#151515] p-5">
+							<div className="mt-5 flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-[#151515] p-4 md:mt-6 md:p-5">
 								<div className="flex items-start gap-3">
-									<Lock className="mt-1 h-5 w-5 text-white" />
+									<Lock className="mt-1 h-4 w-4 text-white md:h-5 md:w-5" />
 
 									<div>
-										<p className="font-bold text-white">
+										<p className="text-sm font-bold text-white md:text-base">
 											Private diary
 										</p>
 
-										<p className="mt-1 text-sm text-muted">
+										<p className="mt-1 text-xs text-muted md:text-sm">
 											Only friends you approve can see
 											what you have been watching.
 										</p>
@@ -398,7 +447,7 @@ export default function ProfilePage() {
 									onClick={() =>
 										setDraftPrivateDiary((value) => !value)
 									}
-									className={`relative h-8 w-14 rounded-full transition ${
+									className={`relative h-7 w-12 shrink-0 rounded-full transition md:h-8 md:w-14 ${
 										draftPrivateDiary
 											? "bg-accent"
 											: "bg-white/20"
@@ -406,21 +455,21 @@ export default function ProfilePage() {
 									aria-label="Toggle private diary"
 								>
 									<span
-										className={`absolute top-1 h-6 w-6 rounded-full bg-white transition ${
+										className={`absolute top-1 h-5 w-5 rounded-full bg-white transition md:h-6 md:w-6 ${
 											draftPrivateDiary
-												? "left-7"
+												? "left-6 md:left-7"
 												: "left-1"
 										}`}
 									/>
 								</button>
 							</div>
 
-							<div className="mt-6 flex flex-wrap gap-3">
+							<div className="mt-5 flex flex-wrap gap-3 md:mt-6">
 								<button
 									type="button"
 									onClick={handleSaveChanges}
 									disabled={saving}
-									className="flex h-12 items-center justify-center gap-2 rounded-full bg-accent px-6 text-sm font-bold text-white transition hover:bg-accent-hover disabled:opacity-50"
+									className="flex h-10 items-center justify-center gap-2 rounded-full bg-accent px-5 text-xs font-bold text-white transition hover:bg-accent-hover disabled:opacity-50 md:h-12 md:px-6 md:text-sm"
 								>
 									<Save className="h-4 w-4" />
 									{saving ? "Saving..." : "Save changes"}
@@ -430,7 +479,7 @@ export default function ProfilePage() {
 									type="button"
 									onClick={handleCancelEdit}
 									disabled={saving}
-									className="flex h-12 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-6 text-sm font-bold text-white transition hover:bg-white/[0.1] disabled:opacity-50"
+									className="flex h-10 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-5 text-xs font-bold text-white transition hover:bg-white/[0.1] disabled:opacity-50 md:h-12 md:px-6 md:text-sm"
 								>
 									<X className="h-4 w-4" />
 									Cancel
