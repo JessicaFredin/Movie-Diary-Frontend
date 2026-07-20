@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import {
 	Menu,
@@ -35,7 +35,7 @@ const profileNavItems = [
 	{ label: "Settings", href: "/settings", icon: Settings },
 ];
 
-function getInitials(nameOrEmail: string) {
+function getInitials(nameOrEmail: string): string {
 	const clean = nameOrEmail.trim();
 
 	if (clean.includes("@")) {
@@ -56,6 +56,13 @@ export default function Navbar() {
 	const router = useRouter();
 	const supabase = useMemo(() => createClient(), []);
 
+	const notificationRef = useRef<HTMLLIElement | null>(null);
+	const profileRef = useRef<HTMLLIElement | null>(null);
+	const mobileMenuRef = useRef<HTMLDivElement | null>(null);
+	const mobileMenuButtonRef = useRef<HTMLButtonElement | null>(null);
+	const mobileNotificationRef = useRef<HTMLDivElement | null>(null);
+	const mobileNotificationButtonRef = useRef<HTMLButtonElement | null>(null);
+
 	const [open, setOpen] = useState(false);
 	const [profileOpen, setProfileOpen] = useState(false);
 	const [notifOpen, setNotifOpen] = useState(false);
@@ -66,12 +73,32 @@ export default function Navbar() {
 	const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 	const [unreadCount, setUnreadCount] = useState(0);
 
-	const loadNotificationCount = useCallback(async () => {
+	const currentPath = pathname || "/";
+	const safeRedirectPath =
+		currentPath === "/login" || currentPath === "/signup"
+			? "/"
+			: currentPath;
+
+	const loginHref = `/login?redirectTo=${encodeURIComponent(
+		safeRedirectPath,
+	)}`;
+
+	const signupHref = `/signup?redirectTo=${encodeURIComponent(
+		safeRedirectPath,
+	)}`;
+
+	function getGuestHref(href: string): string {
+		if (href === "/login") return loginHref;
+		if (href === "/signup") return signupHref;
+		return href;
+	}
+
+	const loadNotificationCount = useCallback(async (): Promise<void> => {
 		const count = await countPendingNotifications(supabase);
 		setUnreadCount(count);
 	}, [supabase]);
 
-	const loadUser = useCallback(async () => {
+	const loadUser = useCallback(async (): Promise<void> => {
 		const {
 			data: { user: authUser },
 		} = await supabase.auth.getUser();
@@ -113,7 +140,7 @@ export default function Navbar() {
 			void loadUser();
 		});
 
-		function handleAvatarUpdated(event: Event) {
+		function handleAvatarUpdated(event: Event): void {
 			const customEvent = event as CustomEvent<{ avatarUrl: string }>;
 			setAvatarUrl(customEvent.detail.avatarUrl);
 		}
@@ -130,7 +157,7 @@ export default function Navbar() {
 	}, [supabase, loadUser]);
 
 	useEffect(() => {
-		function handleFocus() {
+		function handleFocus(): void {
 			if (user?.id) {
 				void loadNotificationCount();
 			}
@@ -143,7 +170,68 @@ export default function Navbar() {
 		};
 	}, [user?.id, loadNotificationCount]);
 
-	const logout = async () => {
+	useEffect(() => {
+		function handleClickOutside(event: MouseEvent): void {
+			const target = event.target;
+
+			if (!(target instanceof Node)) return;
+
+			if (
+				notifOpen &&
+				notificationRef.current &&
+				!notificationRef.current.contains(target)
+			) {
+				setNotifOpen(false);
+			}
+
+			if (
+				profileOpen &&
+				profileRef.current &&
+				!profileRef.current.contains(target)
+			) {
+				setProfileOpen(false);
+			}
+
+			if (
+				open &&
+				mobileMenuRef.current &&
+				mobileMenuButtonRef.current &&
+				!mobileMenuRef.current.contains(target) &&
+				!mobileMenuButtonRef.current.contains(target)
+			) {
+				setOpen(false);
+			}
+
+			if (
+				mobileNotifOpen &&
+				mobileNotificationRef.current &&
+				mobileNotificationButtonRef.current &&
+				!mobileNotificationRef.current.contains(target) &&
+				!mobileNotificationButtonRef.current.contains(target)
+			) {
+				setMobileNotifOpen(false);
+			}
+		}
+
+		function handleEscape(event: KeyboardEvent): void {
+			if (event.key === "Escape") {
+				setNotifOpen(false);
+				setProfileOpen(false);
+				setMobileNotifOpen(false);
+				setOpen(false);
+			}
+		}
+
+		document.addEventListener("mousedown", handleClickOutside);
+		document.addEventListener("keydown", handleEscape);
+
+		return () => {
+			document.removeEventListener("mousedown", handleClickOutside);
+			document.removeEventListener("keydown", handleEscape);
+		};
+	}, [notifOpen, profileOpen, open, mobileNotifOpen]);
+
+	const logout = async (): Promise<void> => {
 		await supabase.auth.signOut();
 		setProfileOpen(false);
 		setOpen(false);
@@ -161,7 +249,6 @@ export default function Navbar() {
 	return (
 		<nav className="sticky top-0 left-0 right-0 z-50 bg-surface-dark py-4 text-white shadow-md">
 			<div className="flex items-center justify-between px-6 lg:px-12">
-				{/* Logo */}
 				<Link href="/">
 					<Image
 						src="/logo.png"
@@ -175,12 +262,11 @@ export default function Navbar() {
 
 				<NavbarSearch />
 
-				{/* Desktop links */}
 				<ul className="hidden items-center gap-6 md:flex">
 					{visibleNavItems.map((item) => (
 						<li key={item.href}>
 							<Link
-								href={item.href}
+								href={getGuestHref(item.href)}
 								className={`${
 									pathname === item.href
 										? "text-accent"
@@ -194,12 +280,22 @@ export default function Navbar() {
 
 					{user && (
 						<>
-							{/* Notifications */}
-							<li className="relative">
+							<li ref={notificationRef} className="relative">
 								<button
 									type="button"
 									onClick={async () => {
-										setNotifOpen((value) => !value);
+										setNotifOpen((value) => {
+											const next = !value;
+
+											if (next) {
+												setProfileOpen(false);
+												setOpen(false);
+												setMobileNotifOpen(false);
+											}
+
+											return next;
+										});
+
 										await loadNotificationCount();
 									}}
 									className="relative"
@@ -227,13 +323,22 @@ export default function Navbar() {
 								)}
 							</li>
 
-							{/* Profile avatar */}
-							<li className="relative">
+							<li ref={profileRef} className="relative">
 								<button
 									type="button"
-									onClick={() =>
-										setProfileOpen((value) => !value)
-									}
+									onClick={() => {
+										setProfileOpen((value) => {
+											const next = !value;
+
+											if (next) {
+												setNotifOpen(false);
+												setOpen(false);
+												setMobileNotifOpen(false);
+											}
+
+											return next;
+										});
+									}}
 									className="h-9 w-9 cursor-pointer overflow-hidden rounded-full border border-accent focus:outline-none"
 									aria-label="Profile menu"
 								>
@@ -287,14 +392,18 @@ export default function Navbar() {
 					)}
 				</ul>
 
-				{/* Mobile */}
 				<div className="flex items-center gap-4 md:hidden">
 					{user && (
 						<button
+							ref={mobileNotificationButtonRef}
 							type="button"
 							onClick={async () => {
-								await loadNotificationCount();
 								setMobileNotifOpen(true);
+								setOpen(false);
+								setProfileOpen(false);
+								setNotifOpen(false);
+
+								await loadNotificationCount();
 							}}
 							className="relative"
 							aria-label="Notifications"
@@ -310,8 +419,21 @@ export default function Navbar() {
 					)}
 
 					<button
+						ref={mobileMenuButtonRef}
 						type="button"
-						onClick={() => setOpen((value) => !value)}
+						onClick={() => {
+							setOpen((value) => {
+								const next = !value;
+
+								if (next) {
+									setNotifOpen(false);
+									setProfileOpen(false);
+									setMobileNotifOpen(false);
+								}
+
+								return next;
+							});
+						}}
 						className="md:hidden"
 						aria-label="Menu"
 					>
@@ -321,22 +443,26 @@ export default function Navbar() {
 			</div>
 
 			{mobileNotifOpen && (
-				<MobileNotifications
-					onClose={() => {
-						setMobileNotifOpen(false);
-						void loadNotificationCount();
-					}}
-					onCountChange={setUnreadCount}
-				/>
+				<div ref={mobileNotificationRef}>
+					<MobileNotifications
+						onClose={() => {
+							setMobileNotifOpen(false);
+							void loadNotificationCount();
+						}}
+						onCountChange={setUnreadCount}
+					/>
+				</div>
 			)}
 
-			{/* Mobile dropdown */}
 			{open && (
-				<div className="mt-4 space-y-3 px-6 md:hidden">
+				<div
+					ref={mobileMenuRef}
+					className="mt-4 space-y-3 px-6 md:hidden"
+				>
 					{visibleNavItems.map((item) => (
 						<Link
 							key={item.href}
-							href={item.href}
+							href={getGuestHref(item.href)}
 							onClick={() => setOpen(false)}
 							className="block text-muted hover:text-white"
 						>

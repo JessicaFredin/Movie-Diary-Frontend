@@ -9,21 +9,30 @@ export interface CastMember {
 
 interface MediaCastProps {
 	cast: CastMember[];
-	title?: string; // optional override if needed
+	title?: string;
+}
+
+function getWikipediaUrl(name: string) {
+	const wikiName = name.trim().replaceAll(" ", "_");
+	return `https://en.wikipedia.org/wiki/${encodeURIComponent(wikiName)}`;
 }
 
 export default function MediaCast({ cast, title = "Cast" }: MediaCastProps) {
 	if (!cast || cast.length === 0) return null;
 
 	return (
-		<section className="px-6 md:px-24 ">
+		<section className="px-6 md:px-24">
 			<h2 className="text-2xl font-semibold mb-8">{title}</h2>
 
 			<div className="flex md:grid md:grid-cols-3 lg:grid-cols-6 gap-6 overflow-x-auto md:overflow-visible pb-2">
 				{cast.map((actor) => (
-					<div
+					<a
 						key={actor.id}
-						className="group min-w-[180px] md:min-w-0 bg-surface-dark border border-surface-elevated rounded-2xl p-6 flex flex-col items-center text-center transition-all duration-300 hover:bg-surface-elevated"
+						href={getWikipediaUrl(actor.name)}
+						target="_blank"
+						rel="noopener noreferrer"
+						className="group min-w-[180px] md:min-w-0 bg-surface-dark border border-surface-elevated rounded-2xl p-6 flex flex-col items-center text-center transition-all duration-300 hover:bg-surface-elevated cursor-pointer"
+						title={`Open ${actor.name} on Wikipedia`}
 					>
 						{/* Avatar */}
 						<div className="relative w-16 h-16 rounded-full overflow-hidden mb-4 ring-1 ring-surface-elevated transition-all duration-300 group-hover:ring-2 group-hover:ring-accent/70">
@@ -36,7 +45,7 @@ export default function MediaCast({ cast, title = "Cast" }: MediaCastProps) {
 						</div>
 
 						{/* Name */}
-						<p className="text-sm font-semibold text-white">
+						<p className="text-sm font-semibold text-white transition group-hover:text-accent">
 							{actor.name}
 						</p>
 
@@ -44,7 +53,7 @@ export default function MediaCast({ cast, title = "Cast" }: MediaCastProps) {
 						<p className="text-xs text-muted mt-1">
 							{actor.character}
 						</p>
-					</div>
+					</a>
 				))}
 			</div>
 		</section>

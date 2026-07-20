@@ -557,7 +557,7 @@ export default function MediaCard({
 								{mediaRating !== null &&
 									mediaRating !== undefined && (
 										<span className="flex items-center gap-1 rounded-full bg-black/75 px-2 py-0.5 text-xs text-white">
-											<Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+											<Star className="h-3 w-3 fill-accent text-accent" />
 											{mediaRating.toFixed(1)}
 										</span>
 									)}

@@ -209,7 +209,8 @@ export default async function MovieDetailsPage({ params }: PageProps) {
 			<MediaCast cast={cast} />
 
 			{/* ===== COMMENTS ===== */}
-			<MediaComments comments={MOCK_COMMENTS} />
+			{/* <MediaComments comments={MOCK_COMMENTS} /> */}
+			<MediaComments mediaId={movie.id} mediaType="movie" />
 		</main>
 	);
 }
