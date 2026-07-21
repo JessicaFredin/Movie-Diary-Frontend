@@ -1,5 +1,16 @@
 import Image from "next/image";
 import LoginForm from "@/components/forms/login-form";
+import { Suspense } from "react";
+
+function LoginFormFallback() {
+	return (
+		<div className="flex min-h-screen items-center justify-center bg-black px-6 text-white">
+			<div className="w-full max-w-sm rounded-md bg-[#070707] p-6">
+				<p className="text-sm text-muted">Loading login...</p>
+			</div>
+		</div>
+	);
+}
 
 export default function LoginPage() {
 	return (
@@ -26,11 +37,15 @@ export default function LoginPage() {
 					priority
 				/>
 			</div>
+			
 
 			{/* RIGHT: Login Form */}
-			<div className="flex w-full md:w-1/2 items-center justify-center p-6">
-				<LoginForm />
-			</div>
+			<main className="flex w-full md:w-1/2 items-center justify-center p-6">
+			
+				<Suspense fallback={<LoginFormFallback />}>
+					<LoginForm />
+				</Suspense>
+			</main>
 		</div>
 	);
 }
