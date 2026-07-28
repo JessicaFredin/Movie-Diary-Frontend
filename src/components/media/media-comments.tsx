@@ -1409,7 +1409,7 @@ export default function MediaComments({
 		}
 
 		setReportTarget(null);
-		showToast("success", "Report submitted. Thanks — we’ll review it.");
+		showToast("success", "Report submitted. We’ll review it.");
 
 		return {
 			success: true,

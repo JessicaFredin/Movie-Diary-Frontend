@@ -77,30 +77,32 @@ export default function MediaRatings({
 	}, [loadRatings, refreshKey]);
 
 	return (
-		<div className="flex flex-wrap items-center gap-3">
-			<div className="flex min-w-[155px] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-2">
+		<div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:gap-3">
+			<div className="flex min-w-0 items-center gap-2 rounded-3xl border border-white/10 bg-white/[0.04] px-2.5 py-2 sm:min-w-[155px] sm:gap-3 sm:px-4 sm:py-2.5">
 				<div className="flex items-center gap-2">
 					<Star className="h-4 w-4 fill-accent text-accent" />
 
 					<div className="flex items-end gap-1">
-						<span className="text-xl font-black text-white">
+						<span className="text-lg font-black text-white sm:text-xl">
 							{typeof tmdbRating === "number"
 								? tmdbRating.toFixed(1)
 								: "—"}
 						</span>
 
-						<span className="pb-0.5 text-xs text-muted">/ 10</span>
+						<span className="pb-0.5 text-[10px] text-muted sm:text-xs">
+							/ 10
+						</span>
 					</div>
 				</div>
 
-				<div className="h-7 w-px bg-white/10" />
+				<div className="h-7 w-px bg-white/10 sm:h-8" />
 
 				<div>
-					<p className="text-[10px] uppercase tracking-wide text-muted">
+					<p className="text-[9px] uppercase tracking-wide text-muted sm:text-[10px]">
 						TMDB
 					</p>
 
-					<p className="text-xs text-white">
+					<p className="truncate text-[10px] text-white sm:text-xs">
 						{typeof tmdbVoteCount === "number"
 							? formatCount(tmdbVoteCount)
 							: "No ratings"}
@@ -108,12 +110,12 @@ export default function MediaRatings({
 				</div>
 			</div>
 
-			<div className="flex min-w-[155px] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-2">
+			<div className="flex min-w-0 items-center gap-2 rounded-3xl border border-white/10 bg-white/[0.04] px-2.5 py-2 sm:min-w-[155px] sm:gap-3 sm:px-4 sm:py-2.5">
 				<div className="flex items-center gap-2">
 					<Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
 
 					<div className="flex items-end gap-1">
-						<span className="text-xl font-black text-white">
+						<span className="text-lg font-black text-white sm:text-xl">
 							{loading
 								? "—"
 								: userAverage !== null
@@ -121,18 +123,20 @@ export default function MediaRatings({
 									: "—"}
 						</span>
 
-						<span className="pb-0.5 text-xs text-muted">/ 10</span>
+						<span className="pb-0.5 text-[10px] text-muted sm:text-xs">
+							/ 10
+						</span>
 					</div>
 				</div>
 
-				<div className="h-7 w-px bg-white/10" />
+				<div className="h-7 w-px bg-white/10 sm:h-8" />
 
 				<div>
-					<p className="text-[10px] uppercase tracking-wide text-muted">
+					<p className="text-[9px] uppercase tracking-wide text-muted sm:text-[10px]">
 						Users
 					</p>
 
-					<p className="text-xs text-white">
+					<p className="truncate text-[10px] text-white sm:text-xs">
 						{loading ? "Loading..." : formatCount(userCount)}
 					</p>
 				</div>
