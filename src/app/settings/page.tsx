@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import {
 	ArrowLeft,
 	Lock,
@@ -10,10 +11,37 @@ import {
 	Trash2,
 	ChevronRight,
 } from "lucide-react";
-
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+
+type ProfileCardData = {
+	display_name: string;
+	email: string;
+	avatar_url: string | null;
+};
+
+function getInitials(nameOrEmail: string): string {
+	const clean = nameOrEmail.trim();
+
+	if (!clean) return "U";
+
+	const parts = clean.split(" ").filter(Boolean);
+
+	if (parts.length >= 2) {
+		return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+	}
+
+	return clean.slice(0, 2).toUpperCase();
+}
 
 export default function SettingsPage() {
+	const router = useRouter();
+	const supabase = useMemo(() => createClient(), []);
+
+	const [profile, setProfile] = useState<ProfileCardData | null>(null);
+	const [loading, setLoading] = useState(true);
+
 	const settings = [
 		{
 			icon: <Lock size={18} />,
@@ -60,61 +88,119 @@ export default function SettingsPage() {
 		},
 	];
 
+	useEffect(() => {
+		async function loadProfile(): Promise<void> {
+			setLoading(true);
+
+			const {
+				data: { user },
+			} = await supabase.auth.getUser();
+
+			if (!user) {
+				setProfile(null);
+				setLoading(false);
+				return;
+			}
+
+			const { data } = await supabase
+				.from("profiles")
+				.select("display_name, avatar_url")
+				.eq("id", user.id)
+				.maybeSingle();
+
+			const profileData = data as {
+				display_name: string | null;
+				avatar_url: string | null;
+			} | null;
+
+			setProfile({
+				display_name:
+					profileData?.display_name ||
+					user.user_metadata?.full_name ||
+					user.user_metadata?.name ||
+					user.email ||
+					"User",
+				email: user.email ?? "",
+				avatar_url:
+					profileData?.avatar_url ||
+					user.user_metadata?.avatar_url ||
+					null,
+			});
+
+			setLoading(false);
+		}
+
+		void loadProfile();
+	}, [supabase]);
+
 	return (
-		<div className="max-w-3xl mx-auto px-6 py-10 space-y-8">
-			{/* HEADER */}
+		<div className="mx-auto max-w-3xl space-y-8 px-6 py-10">
 			<div className="flex items-center justify-between border-b border-border pb-4">
 				<div className="flex items-center gap-3">
-					<ArrowLeft
-						size={20}
-						className="text-muted cursor-pointer"
-					/>
+					<button
+						type="button"
+						onClick={() => router.back()}
+						className="text-muted transition hover:text-white"
+						aria-label="Go back"
+					>
+						<ArrowLeft size={20} />
+					</button>
 
 					<h1 className="text-xl font-semibold">Settings</h1>
 				</div>
 			</div>
 
-			{/* PROFILE CARD */}
-			<div className="bg-surface rounded-3xl p-6 flex items-center justify-between border border-border shadow-lg">
+			<div className="flex items-center justify-between rounded-3xl border border-border bg-surface p-6 shadow-lg">
 				<div className="flex items-center gap-4">
-					{/* Avatar */}
-					<div className="w-14 h-14 rounded-full bg-accent flex items-center justify-center text-white font-semibold text-lg">
-						JD
+					<div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-accent text-lg font-semibold text-white">
+						{profile?.avatar_url ? (
+							<img
+								src={profile.avatar_url}
+								alt={profile.display_name}
+								className="h-full w-full object-cover"
+							/>
+						) : (
+							getInitials(profile?.display_name ?? "User")
+						)}
 					</div>
 
-					{/* Name + Email */}
 					<div>
-						<p className="font-semibold text-lg">John Doe</p>
-						<p className="text-muted text-sm">john@example.com</p>
+						<p className="text-lg font-semibold">
+							{loading
+								? "Loading..."
+								: (profile?.display_name ?? "Not logged in")}
+						</p>
+						<p className="text-sm text-muted">
+							{profile?.email ?? ""}
+						</p>
 					</div>
 				</div>
 
-				<button className="text-accent text-sm font-medium hover:underline">
+				<Link
+					href="/profile"
+					className="text-sm font-medium text-accent hover:underline"
+				>
 					View Profile
-				</button>
+				</Link>
 			</div>
 
-			{/* SETTINGS LIST */}
-			<div className="bg-surface rounded-3xl border border-border overflow-hidden shadow-lg">
+			<div className="overflow-hidden rounded-3xl border border-border bg-surface shadow-lg">
 				{settings.map((item, index) => (
-					<Link key={index} href={item.route}>
+					<Link key={item.route} href={item.route}>
 						<div
-							className={`flex items-center justify-between px-6 py-5 hover:bg-white/5 transition cursor-pointer ${
+							className={`flex cursor-pointer items-center justify-between px-6 py-5 transition hover:bg-white/5 ${
 								index !== settings.length - 1
 									? "border-b border-border"
 									: ""
 							}`}
 						>
-							{/* LEFT */}
 							<div className="flex items-center gap-4">
-								{/* ICON */}
 								<div
-									className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.color}`}
+									className={`flex h-10 w-10 items-center justify-center rounded-xl ${item.color}`}
 								>
 									{item.icon}
 								</div>
 
-								{/* TEXT */}
 								<div>
 									<p
 										className={`font-medium ${
@@ -130,7 +216,6 @@ export default function SettingsPage() {
 								</div>
 							</div>
 
-							{/* RIGHT CHEVRON */}
 							<ChevronRight size={18} className="text-muted" />
 						</div>
 					</Link>
