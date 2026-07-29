@@ -511,6 +511,12 @@ type Props = {
 	title: string;
 	poster: string;
 	backdrop: string;
+	genres?: GenreSnapshot[];
+};
+
+type GenreSnapshot = {
+	id: number;
+	name: string;
 };
 
 type ProgressShape = {
@@ -542,7 +548,7 @@ function getEpisodeLabel(entry: DiaryEntry | null) {
 	return `Season ${progress.currentSeason}, Episode ${progress.currentEpisode}`;
 }
 
-export default function TvDiaryActions({ id, title, poster, backdrop }: Props) {
+export default function TvDiaryActions({ id, title, poster, backdrop, genres = [] }: Props) {
 	const [open, setOpen] = useState(false);
 	const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -761,6 +767,7 @@ export default function TvDiaryActions({ id, title, poster, backdrop }: Props) {
 						title,
 						poster,
 						backdrop,
+						genres,
 					}}
 					initialData={activeEntry}
 				/>

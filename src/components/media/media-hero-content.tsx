@@ -1057,18 +1057,40 @@ export default function MediaHeroContent({ media }: MediaHeroContentProps) {
 						{/* Actions */}
 						<div className="max-w-sm space-y-4">
 							{movie ? (
+								// <MovieDiaryActions
+								// 	id={media.id}
+								// 	title={title}
+								// 	poster={getPosterUrl(media.poster_path)}
+								// 	backdrop={getPosterUrl(media.backdrop_path)}
+								// />
+
 								<MovieDiaryActions
 									id={media.id}
 									title={title}
 									poster={getPosterUrl(media.poster_path)}
 									backdrop={getPosterUrl(media.backdrop_path)}
+									genres={genres.map((genre) => ({
+										id: genre.id,
+										name: genre.name,
+									}))}
 								/>
 							) : (
+								// <TvDiaryActions
+								// 	id={media.id}
+								// 	title={title}
+								// 	poster={getPosterUrl(media.poster_path)}
+								// 	backdrop={getPosterUrl(media.backdrop_path)}
+								// 	/>
+
 								<TvDiaryActions
 									id={media.id}
 									title={title}
 									poster={getPosterUrl(media.poster_path)}
 									backdrop={getPosterUrl(media.backdrop_path)}
+									genres={genres.map((genre) => ({
+										id: genre.id,
+										name: genre.name,
+									}))}
 								/>
 							)}
 

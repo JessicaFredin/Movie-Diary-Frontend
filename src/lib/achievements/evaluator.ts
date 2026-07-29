@@ -185,6 +185,25 @@ async function countActiveDays(
 	return days.size;
 }
 
+async function countGenreTotal(
+	supabase: SupabaseClient,
+	userId: string,
+	genreName: string,
+): Promise<number> {
+	const { count, error } = await supabase
+		.from("diary_entries")
+		.select("id", { count: "exact", head: true })
+		.eq("user_id", userId)
+		.contains("genre_names", [genreName]);
+
+	if (error) {
+		console.warn(`Could not count genre ${genreName}:`, error.message);
+		return 0;
+	}
+
+	return count ?? 0;
+}
+
 async function getProfileComplete(
 	supabase: SupabaseClient,
 	userId: string,
@@ -230,6 +249,29 @@ export async function getAchievementStats(
 		commentsTotal,
 		activeDaysTotal,
 		profileComplete,
+		genreActionTotal,
+		genreAdventureTotal,
+		genreAnimationTotal,
+		genreComedyTotal,
+		genreCrimeTotal,
+		genreDocumentaryTotal,
+		genreDramaTotal,
+		genreFamilyTotal,
+		genreFantasyTotal,
+		genreHistoryTotal,
+		genreHorrorTotal,
+		genreMusicTotal,
+		genreMysteryTotal,
+		genreRomanceTotal,
+		genreScienceFictionTotal,
+		genreThrillerTotal,
+		genreWarTotal,
+		genreWesternTotal,
+		genreRealityTotal,
+		genreKidsTotal,
+		genreTalkTotal,
+		genreActionAdventureTotal,
+		genreSciFiFantasyTotal,
 	] = await Promise.all([
 		countByUser(supabase, "diary_entries", userId),
 		countDiaryByMediaType(supabase, userId, "movie"),
@@ -247,6 +289,29 @@ export async function getAchievementStats(
 		countByUser(supabase, "media_comments", userId),
 		countActiveDays(supabase, userId),
 		getProfileComplete(supabase, userId),
+		countGenreTotal(supabase, userId, "Action"),
+		countGenreTotal(supabase, userId, "Adventure"),
+		countGenreTotal(supabase, userId, "Animation"),
+		countGenreTotal(supabase, userId, "Comedy"),
+		countGenreTotal(supabase, userId, "Crime"),
+		countGenreTotal(supabase, userId, "Documentary"),
+		countGenreTotal(supabase, userId, "Drama"),
+		countGenreTotal(supabase, userId, "Family"),
+		countGenreTotal(supabase, userId, "Fantasy"),
+		countGenreTotal(supabase, userId, "History"),
+		countGenreTotal(supabase, userId, "Horror"),
+		countGenreTotal(supabase, userId, "Music"),
+		countGenreTotal(supabase, userId, "Mystery"),
+		countGenreTotal(supabase, userId, "Romance"),
+		countGenreTotal(supabase, userId, "Science Fiction"),
+		countGenreTotal(supabase, userId, "Thriller"),
+		countGenreTotal(supabase, userId, "War"),
+		countGenreTotal(supabase, userId, "Western"),
+		countGenreTotal(supabase, userId, "Reality"),
+		countGenreTotal(supabase, userId, "Kids"),
+		countGenreTotal(supabase, userId, "Talk"),
+		countGenreTotal(supabase, userId, "Action & Adventure"),
+		countGenreTotal(supabase, userId, "Sci-Fi & Fantasy"),
 	]);
 
 	return {
@@ -266,6 +331,29 @@ export async function getAchievementStats(
 		comments_total: commentsTotal,
 		active_days_total: activeDaysTotal,
 		profile_complete: profileComplete,
+		genre_action_total: genreActionTotal,
+		genre_adventure_total: genreAdventureTotal,
+		genre_animation_total: genreAnimationTotal,
+		genre_comedy_total: genreComedyTotal,
+		genre_crime_total: genreCrimeTotal,
+		genre_documentary_total: genreDocumentaryTotal,
+		genre_drama_total: genreDramaTotal,
+		genre_family_total: genreFamilyTotal,
+		genre_fantasy_total: genreFantasyTotal,
+		genre_history_total: genreHistoryTotal,
+		genre_horror_total: genreHorrorTotal,
+		genre_music_total: genreMusicTotal,
+		genre_mystery_total: genreMysteryTotal,
+		genre_romance_total: genreRomanceTotal,
+		genre_science_fiction_total: genreScienceFictionTotal,
+		genre_thriller_total: genreThrillerTotal,
+		genre_war_total: genreWarTotal,
+		genre_western_total: genreWesternTotal,
+		genre_reality_total: genreRealityTotal,
+		genre_kids_total: genreKidsTotal,
+		genre_talk_total: genreTalkTotal,
+		genre_action_adventure_total: genreActionAdventureTotal,
+		genre_sci_fi_fantasy_total: genreSciFiFantasyTotal,
 	};
 }
 

@@ -5,7 +5,8 @@ export type AchievementCategory =
 	| "Ratings"
 	| "Watchlist"
 	| "Social"
-	| "Profile";
+	| "Profile"
+	| "Genres";
 
 export type AchievementRarity = "common" | "rare" | "epic" | "legendary";
 
@@ -25,7 +26,30 @@ export type AchievementRuleKey =
 	| "friends_total"
 	| "comments_total"
 	| "active_days_total"
-	| "profile_complete";
+	| "profile_complete"
+	| "genre_action_total"
+	| "genre_adventure_total"
+	| "genre_animation_total"
+	| "genre_comedy_total"
+	| "genre_crime_total"
+	| "genre_documentary_total"
+	| "genre_drama_total"
+	| "genre_family_total"
+	| "genre_fantasy_total"
+	| "genre_history_total"
+	| "genre_horror_total"
+	| "genre_music_total"
+	| "genre_mystery_total"
+	| "genre_romance_total"
+	| "genre_science_fiction_total"
+	| "genre_thriller_total"
+	| "genre_war_total"
+	| "genre_western_total"
+	| "genre_reality_total"
+	| "genre_kids_total"
+	| "genre_talk_total"
+	| "genre_action_adventure_total"
+	| "genre_sci_fi_fantasy_total";
 
 export type AchievementDefinition = {
 	id: string;

@@ -27,5 +27,6 @@ export type DiaryEntry = {
 	genre?: string;
 	service?: string;
 
-	
+	genreIds?: number[];
+	genreNames?: string[];
 };

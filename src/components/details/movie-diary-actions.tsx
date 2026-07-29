@@ -467,6 +467,12 @@ type Props = {
 	title: string;
 	poster: string;
 	backdrop: string;
+	genres?: GenreSnapshot[];
+};
+
+type GenreSnapshot = {
+	id: number;
+	name: string;
 };
 
 export default function MovieDiaryActions({
@@ -474,6 +480,7 @@ export default function MovieDiaryActions({
 	title,
 	poster,
 	backdrop,
+	genres = [],
 }: Props) {
 	const [open, setOpen] = useState(false);
 	const [confirmOpen, setConfirmOpen] = useState(false);
@@ -664,6 +671,7 @@ export default function MovieDiaryActions({
 						title,
 						poster,
 						backdrop,
+						genres,
 					}}
 					initialData={activeEntry}
 				/>

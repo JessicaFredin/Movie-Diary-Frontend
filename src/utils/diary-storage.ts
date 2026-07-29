@@ -20,6 +20,8 @@ type DbDiaryEntry = {
 	status: "watching" | "completed" | "planned";
 	progress: DiaryEntry["progress"] | null;
 	visibility: "private" | "public";
+	genre_ids: number[] | null;
+	genre_names: string[] | null;
 	created_at: string;
 	updated_at: string | null;
 };
@@ -35,8 +37,10 @@ function mapDbToDiaryEntry(row: DbDiaryEntry): DiaryEntry {
 		progress: row.progress ?? undefined,
 		rating: row.rating,
 		review: row.review ?? undefined,
+		genreIds: row.genre_ids ?? [],
+		genreNames: row.genre_names ?? [],
 		updatedAt: row.updated_at ?? row.created_at,
-	} as DiaryEntry;
+	};
 }
 
 export async function getDiary(): Promise<DiaryEntry[]> {
@@ -63,7 +67,7 @@ export async function getDiary(): Promise<DiaryEntry[]> {
 	return ((data ?? []) as DbDiaryEntry[]).map(mapDbToDiaryEntry);
 }
 
-export async function updateDiaryEntry(entry: DiaryEntry) {
+export async function updateDiaryEntry(entry: DiaryEntry): Promise<void> {
 	const supabase = createClient();
 
 	const {
@@ -90,6 +94,8 @@ export async function updateDiaryEntry(entry: DiaryEntry) {
 		status: entry.status ?? "completed",
 		progress: entry.progress ?? null,
 		visibility: "private",
+		genre_ids: entry.genreIds ?? [],
+		genre_names: entry.genreNames ?? [],
 		updated_at: new Date().toISOString(),
 	};
 
@@ -118,7 +124,10 @@ export async function updateDiaryEntry(entry: DiaryEntry) {
 	if (error) throw error;
 }
 
-export async function removeDiaryEntry(id: number, type: MediaType) {
+export async function removeDiaryEntry(
+	id: number,
+	type: MediaType,
+): Promise<void> {
 	const supabase = createClient();
 
 	const {
@@ -142,7 +151,7 @@ export async function removeDiaryEntry(id: number, type: MediaType) {
 /**
  * Keep this so old imports do not break.
  */
-export async function saveDiary(entries: DiaryEntry[]) {
+export async function saveDiary(entries: DiaryEntry[]): Promise<void> {
 	for (const entry of entries) {
 		await updateDiaryEntry(entry);
 	}

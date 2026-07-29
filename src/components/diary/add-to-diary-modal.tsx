@@ -752,9 +752,15 @@ type Props = {
 		title: string;
 		poster: string;
 		backdrop: string;
+		genres?: GenreSnapshot[];
 	};
 	initialData?: DiaryEntry;
 	onSave?: (status: Status) => void | Promise<void>;
+};
+
+type GenreSnapshot = {
+	id: number;
+	name: string;
 };
 
 function getStarFill(starNumber: number, value: number): StarFill {
@@ -996,6 +1002,8 @@ export default function AddToDiaryModal({
 				progress,
 				rating: status === "planned" ? null : rating,
 				updatedAt: new Date().toISOString(),
+				genreIds: content.genres?.map((genre) => genre.id) ?? [],
+				genreNames: content.genres?.map((genre) => genre.name) ?? [],
 			};
 
 			if (status === "planned") {
