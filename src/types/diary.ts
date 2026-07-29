@@ -26,4 +26,6 @@ export type DiaryEntry = {
 
 	genre?: string;
 	service?: string;
+
+	
 };

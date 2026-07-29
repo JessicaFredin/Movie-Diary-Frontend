@@ -4,6 +4,7 @@ import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
 import MobileBottomNav from "@/components/layout/mobile-bottom-nav";
 import { AuthProvider } from "@/context/auth-context";
+import AchievementToast from "@/components/achievements/achievement-toast";
 
 export const metadata: Metadata = {
 	title: "Movie Diary",
@@ -21,6 +22,7 @@ export default function RootLayout({
 				<AuthProvider>
 					<Navbar />
 					<MobileBottomNav />
+					<AchievementToast />
 					<main className="flex-1">{children}</main>
 					<Footer />
 				</AuthProvider>

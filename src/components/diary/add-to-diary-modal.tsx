@@ -738,6 +738,7 @@ import { addToWatchlist, removeFromWatchlist } from "@/utils/watchlist-storage";
 import { createClient } from "@/lib/supabase/client";
 import { deleteUserRating, saveUserRating } from "@/utils/user-ratings";
 import { notifyMediaSavedStateUpdated } from "@/utils/media-saved-events";
+import { checkAchievementsForCurrentUser } from "@/utils/achievements";
 
 type Status = "watching" | "completed" | "planned";
 type StarFill = "empty" | "half" | "full";
@@ -1032,6 +1033,7 @@ export default function AddToDiaryModal({
 			}
 
 			await updateDiaryEntry(entry);
+			await checkAchievementsForCurrentUser(supabase);
 
 			// Diary wins. If this title was in the watchlist, remove it immediately.
 			await removeFromWatchlist(content.id, content.type).catch(() => {});

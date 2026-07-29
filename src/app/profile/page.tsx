@@ -6,9 +6,10 @@ import { Film, Globe2, Lock, Pencil, Save, Users, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import ProfileBanner from "@/components/profile/profile-banner";
 import ProfileAvatar from "@/components/profile/profile-avatar";
-import ProfileDiaryStrip, {
-	ProfileAchievements,
-} from "@/components/profile/profile-diary-strip";
+
+
+import ProfileDiaryStrip from "@/components/profile/profile-diary-strip";
+import ProfileAchievementsPreview from "@/components/achievements/profile-achievements-preview";
 import StreamingServices from "@/components/profile/streaming-services";
 
 type ProfileData = {
@@ -490,6 +491,7 @@ export default function ProfilePage() {
 				</div>
 			</section>
 
+	
 			{!editMode && (
 				<>
 					<ProfileDiaryStrip
@@ -500,7 +502,7 @@ export default function ProfilePage() {
 						viewAllHref="/my-diary"
 					/>
 
-					<ProfileAchievements />
+					<ProfileAchievementsPreview />
 				</>
 			)}
 		</main>
