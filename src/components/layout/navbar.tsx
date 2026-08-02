@@ -33,7 +33,7 @@ const profileNavItems = [
 	{ label: "My Diary", href: "/my-diary", icon: Notebook },
 	{ label: "My Watchlist", href: "/my-watchlist", icon: Bookmark },
 	{ label: "My Notes", href: "/my-notes", icon: StickyNote },
-	{ label: "My Friends", href: "/friends", icon: Users },
+	{ label: "My Friends", href: "/my-friends", icon: Users },
 	{ label: "Settings", href: "/settings", icon: Settings },
 ];
 
@@ -499,7 +499,7 @@ export default function Navbar() {
 							</Link>
 
 							<Link
-								href="/friends"
+								href="/my-friends"
 								onClick={() => setOpen(false)}
 								className="block text-muted hover:text-white"
 							>
@@ -507,7 +507,7 @@ export default function Navbar() {
 							</Link>
 
 							<Link
-								href="/friends"
+								href="/my-notes"
 								onClick={() => setOpen(false)}
 								className="block text-muted hover:text-white"
 							>

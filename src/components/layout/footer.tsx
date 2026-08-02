@@ -13,7 +13,7 @@ const diaryLinks = [
 	{ label: "Profile", href: "/profile" },
 	{ label: "My Watchlist", href: "/my-watchlist" },
 	{ label: "My Diary", href: "/my-diary" },
-	{ label: "My Friends", href: "/friends" },
+	{ label: "My Friends", href: "/my-friends" },
 ];
 
 const supportLinks = [
