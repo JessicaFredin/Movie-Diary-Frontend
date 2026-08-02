@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import useSWRInfinite from "swr/infinite";
 import { Filter as FilterIcon, SlidersHorizontal, Star, X } from "lucide-react";
 
@@ -142,7 +142,7 @@ function useDebouncedValue(value: string, delay: number): string {
 	return debouncedValue;
 }
 
-export default function HomePage() {
+function HomePageContent() {
 	const router = useRouter();
 	const pathname = usePathname();
 	const searchParams = useSearchParams();
@@ -562,5 +562,19 @@ export default function HomePage() {
 				</div>
 			)}
 		</main>
+	);
+}
+
+export default function HomePage() {
+	return (
+		<Suspense
+			fallback={
+				<main className="min-h-screen bg-black px-6 py-12 text-white md:px-12">
+					<p className="text-sm text-muted">Loading...</p>
+				</main>
+			}
+		>
+			<HomePageContent />
+		</Suspense>
 	);
 }

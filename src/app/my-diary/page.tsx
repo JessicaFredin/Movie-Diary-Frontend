@@ -3,7 +3,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+	Suspense,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { CheckCircle2, Pencil, PlayCircle, Star, Trash2 } from "lucide-react";
 
 import MediaToolbar from "@/components/diary/media-toolbar";
@@ -523,7 +530,7 @@ function DiaryList({
 	);
 }
 
-export default function MyDiaryPage() {
+function MyDiaryPageContent() {
 	const router = useRouter();
 	const pathname = usePathname();
 	const searchParams = useSearchParams();
@@ -536,6 +543,7 @@ export default function MyDiaryPage() {
 
 		return "all";
 	});
+
 	const [sort, setSort] = useState(searchParams.get("sort") ?? "Popularity");
 	const [query, setQuery] = useState(searchParams.get("q") ?? "");
 	const [items, setItems] = useState<DiaryEntry[]>([]);
@@ -887,5 +895,19 @@ export default function MyDiaryPage() {
 				</>
 			)}
 		</div>
+	);
+}
+
+export default function MyDiaryPage() {
+	return (
+		<Suspense
+			fallback={
+				<div className="relative overflow-hidden px-6 py-10 md:px-24">
+					<p className="text-sm text-muted">Loading diary...</p>
+				</div>
+			}
+		>
+			<MyDiaryPageContent />
+		</Suspense>
 	);
 }

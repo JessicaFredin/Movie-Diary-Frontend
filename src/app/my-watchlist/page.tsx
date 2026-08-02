@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { KeyboardEvent } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { getWatchlist, removeFromWatchlist } from "@/utils/watchlist-storage";
 import { DiaryEntry } from "@/types/diary";
 import AddToDiaryModal from "@/components/diary/add-to-diary-modal";
@@ -393,7 +393,7 @@ function WatchlistList({
 	);
 }
 
-export default function WatchlistPage() {
+function WatchlistPageContent() {
 	const router = useRouter();
 	const pathname = usePathname();
 	const searchParams = useSearchParams();
@@ -718,5 +718,19 @@ export default function WatchlistPage() {
 				/>
 			)}
 		</div>
+	);
+}
+
+export default function WatchlistPage() {
+	return (
+		<Suspense
+			fallback={
+				<div className="relative px-6 py-10 md:px-24">
+					<p className="text-sm text-muted">Loading watchlist...</p>
+				</div>
+			}
+		>
+			<WatchlistPageContent />
+		</Suspense>
 	);
 }
