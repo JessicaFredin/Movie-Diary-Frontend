@@ -6,9 +6,9 @@
 
   /* Surfaces */
   --color-surface-1: #141414;
-  --color-surface-2: #1e2939; /* #1b1b1b  */
+  --color-surface-2: #1b1b1b; 
   --color-surface-3: #101010;
-  --color-surface-neutral: #364153; /* #2a2a2a  */
+  --color-surface-neutral: #2a2a2a; 
   --color-surface-dark: #111111;
 
   /* Borders */
@@ -66,7 +66,7 @@
 body {
   background: var(--color-bg-base);
   color: var(--color-text-primary);
-  font-family: Poppins, sans-serif;
+  font-family: Inter, sans-serif;
 }
 
 button {

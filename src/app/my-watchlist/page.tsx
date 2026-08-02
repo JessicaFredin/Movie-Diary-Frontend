@@ -1,48 +1,392 @@
 "use client";
 
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import type { KeyboardEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { getWatchlist, removeFromWatchlist } from "@/utils/watchlist-storage";
 import { DiaryEntry } from "@/types/diary";
-import MovieGrid from "@/components/diary/movie-grid";
 import AddToDiaryModal from "@/components/diary/add-to-diary-modal";
 import MediaToolbar from "@/components/diary/media-toolbar";
-import { getPosterUrl } from "@/utils/tmdb-image";
-import { Trash2, Plus } from "lucide-react";
+import ConfirmDialog from "@/components/ui/confirm-dialog";
+import { Trash2, Plus, Star, BookmarkCheck } from "lucide-react";
 import MediaCard from "@/components/media/media-card";
+import LoadMoreButton from "@/components/ui/load-more-button";
+import { GENRE_MAP } from "@/constants/genres";
 
-const GENRES = [
-	"Action",
-	"Comedy",
-	"Drama",
-	"Horror",
-	"Sci-Fi",
-	"Thriller",
-	"Romance",
-	"Animation",
-	"Documentary",
-];
+const ITEMS_PER_LOAD = 24;
 
-const SERVICES = [
-	"Netflix",
-	"Prime Video",
-	"Disney+",
-	"Max",
-	"Apple TV+",
-	"Hulu",
-];
+const GENRES = Array.from(new Set(Object.values(GENRE_MAP))).sort();
+
+type WatchlistSort =
+	| "Latest"
+	| "Recently added"
+	| "Recently Added"
+	| "Oldest"
+	| "A-Z"
+	| "Z-A"
+	| "Highest rated"
+	| "Lowest rated"
+	| "Popularity";
+
+type GenreSnapshot = {
+	id?: number;
+	name?: string;
+};
+
+type WatchlistItemWithGenres = DiaryEntry & {
+	genre?: string;
+	genreIds?: number[];
+	genreNames?: string[];
+	genre_ids?: number[];
+	genre_names?: string[];
+	genres?: Array<GenreSnapshot | string>;
+};
+
+function getImageUrl(path?: string | null): string {
+	if (!path) return "/logo.png";
+	if (path.startsWith("http")) return path;
+
+	const cleanPath = path.startsWith("/") ? path : `/${path}`;
+
+	if (cleanPath.startsWith("/images/") || cleanPath === "/logo.png") {
+		return cleanPath;
+	}
+
+	return `https://image.tmdb.org/t/p/w500${cleanPath}`;
+}
+
+function getHref(entry: DiaryEntry): string {
+	return entry.type === "movie" ? `/movie/${entry.id}` : `/tv/${entry.id}`;
+}
+
+function formatDate(value?: string | null): string {
+	if (!value) return "Unknown date";
+
+	const date = new Date(value);
+
+	if (Number.isNaN(date.getTime())) return "Unknown date";
+
+	return new Intl.DateTimeFormat("en", {
+		year: "numeric",
+		month: "short",
+		day: "numeric",
+	}).format(date);
+}
+
+function getTime(value?: string | null): number {
+	if (!value) return 0;
+
+	const date = new Date(value);
+	const time = date.getTime();
+
+	return Number.isNaN(time) ? 0 : time;
+}
+
+function normalizeGenre(value: string): string {
+	return value.trim().toLowerCase();
+}
+
+function getItemGenres(entry: DiaryEntry): string[] {
+	const item = entry as WatchlistItemWithGenres;
+	const genres = new Set<string>();
+
+	if (item.genre) {
+		genres.add(item.genre);
+	}
+
+	if (Array.isArray(item.genreNames)) {
+		item.genreNames.forEach((genre) => {
+			if (genre) genres.add(genre);
+		});
+	}
+
+	if (Array.isArray(item.genre_names)) {
+		item.genre_names.forEach((genre) => {
+			if (genre) genres.add(genre);
+		});
+	}
+
+	if (Array.isArray(item.genreIds)) {
+		item.genreIds.forEach((genreId) => {
+			const genreName = GENRE_MAP[genreId];
+
+			if (genreName) genres.add(genreName);
+		});
+	}
+
+	if (Array.isArray(item.genre_ids)) {
+		item.genre_ids.forEach((genreId) => {
+			const genreName = GENRE_MAP[genreId];
+
+			if (genreName) genres.add(genreName);
+		});
+	}
+
+	if (Array.isArray(item.genres)) {
+		item.genres.forEach((genre) => {
+			if (typeof genre === "string") {
+				genres.add(genre);
+				return;
+			}
+
+			if (genre.name) {
+				genres.add(genre.name);
+				return;
+			}
+
+			if (typeof genre.id === "number" && GENRE_MAP[genre.id]) {
+				genres.add(GENRE_MAP[genre.id]);
+			}
+		});
+	}
+
+	return Array.from(genres);
+}
+
+function getTmdbRating(entry: DiaryEntry): number | null {
+	const rawRating = entry.rating as unknown;
+
+	if (typeof rawRating === "number" && rawRating > 0) {
+		return rawRating;
+	}
+
+	if (typeof rawRating === "string") {
+		const parsedRating = Number(rawRating);
+
+		if (!Number.isNaN(parsedRating) && parsedRating > 0) {
+			return parsedRating;
+		}
+	}
+
+	return null;
+}
+
+function itemHasGenre(entry: DiaryEntry, selectedGenres: string[]): boolean {
+	if (selectedGenres.length === 0) return true;
+
+	const itemGenres = getItemGenres(entry).map(normalizeGenre);
+	const selected = selectedGenres.map(normalizeGenre);
+
+	return selected.some((genre) => itemGenres.includes(genre));
+}
+
+function sortWatchlistItems(items: DiaryEntry[], sort: string): DiaryEntry[] {
+	const typedSort = sort as WatchlistSort;
+
+	return [...items].sort((a, b) => {
+		if (typedSort === "A-Z") {
+			return a.title.localeCompare(b.title);
+		}
+
+		if (typedSort === "Z-A") {
+			return b.title.localeCompare(a.title);
+		}
+
+		if (typedSort === "Highest rated") {
+			return (b.rating ?? 0) - (a.rating ?? 0);
+		}
+
+		if (typedSort === "Lowest rated") {
+			return (a.rating ?? 0) - (b.rating ?? 0);
+		}
+
+		if (typedSort === "Oldest") {
+			return getTime(a.updatedAt) - getTime(b.updatedAt);
+		}
+
+		return getTime(b.updatedAt) - getTime(a.updatedAt);
+	});
+}
+
+function WatchlistListItem({
+	item,
+	onRemove,
+	onAddToDiary,
+}: {
+	item: DiaryEntry;
+	onRemove: (entry: DiaryEntry) => void | Promise<void>;
+	onAddToDiary: (entry: DiaryEntry) => void;
+}) {
+	const router = useRouter();
+
+	const [deleteOpen, setDeleteOpen] = useState(false);
+	const [deleting, setDeleting] = useState(false);
+
+	const href = getHref(item);
+	const posterUrl = getImageUrl(item.poster);
+
+	function openDetails(): void {
+		router.push(href);
+	}
+
+	function handleKeyDown(event: KeyboardEvent<HTMLDivElement>): void {
+		if (event.key === "Enter" || event.key === " ") {
+			event.preventDefault();
+			openDetails();
+		}
+	}
+
+	async function handleConfirmRemove(): Promise<void> {
+		try {
+			setDeleting(true);
+			await onRemove(item);
+			setDeleteOpen(false);
+		} catch (error) {
+			console.error("Failed to remove watchlist item:", error);
+			alert("Could not remove this from your watchlist.");
+		} finally {
+			setDeleting(false);
+		}
+	}
+
+	return (
+		<>
+			<div
+				role="button"
+				tabIndex={0}
+				onClick={openDetails}
+				onKeyDown={handleKeyDown}
+				className="group relative cursor-pointer overflow-hidden rounded-3xl border border-white/10 bg-white/[0.035] p-3 transition hover:border-accent/50 hover:bg-white/[0.055]"
+			>
+				<div className="flex gap-3 sm:gap-4">
+					<Link
+						href={href}
+						onClick={(event) => event.stopPropagation()}
+						className="relative h-[130px] w-[88px] shrink-0 overflow-hidden rounded-2xl bg-surface-elevated sm:h-[180px] sm:w-[120px]"
+					>
+						<Image
+							src={posterUrl}
+							alt={item.title}
+							fill
+							sizes="120px"
+							className="object-cover transition duration-300 group-hover:scale-105"
+						/>
+					</Link>
+
+					<div className="flex min-w-0 flex-1 flex-col py-0.5 sm:py-1">
+						<div className="flex items-start justify-between gap-2 sm:gap-3">
+							<div className="min-w-0 flex-1">
+								<Link
+									href={href}
+									onClick={(event) => event.stopPropagation()}
+								>
+									<h3 className="line-clamp-2 text-sm font-black leading-tight text-white transition hover:text-accent sm:text-xl">
+										{item.title}
+									</h3>
+								</Link>
+
+								<div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px] text-muted sm:gap-2 sm:text-xs">
+									<span className="rounded-full border border-white/10 bg-black/25 px-2 py-0.5 font-semibold capitalize sm:px-2.5 sm:py-1">
+										{item.type === "movie"
+											? "Movie"
+											: "TV Show"}
+									</span>
+
+									<span className="rounded-full border border-green-500/25 bg-green-500/10 px-2 py-0.5 font-semibold text-green-300 sm:px-2.5 sm:py-1">
+										Planned
+									</span>
+
+									<span className="hidden sm:inline">
+										{formatDate(item.updatedAt)}
+									</span>
+								</div>
+							</div>
+
+							<div
+								className="flex shrink-0 flex-col items-center gap-1.5 sm:gap-2"
+								onClick={(event) => event.stopPropagation()}
+							>
+								{typeof item.rating === "number" && (
+									<div className="hidden shrink-0 items-center gap-1 rounded-full bg-black/40 px-3 py-1.5 text-sm font-bold text-white sm:flex">
+										<Star className="h-4 w-4 fill-accent text-accent" />
+										{item.rating.toFixed(1)}
+									</div>
+								)}
+
+								<button
+									type="button"
+									onClick={() => onAddToDiary(item)}
+									className="flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.06] text-white transition hover:bg-accent sm:h-9 sm:w-9"
+									title="Add to diary"
+								>
+									<Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+								</button>
+
+								<button
+									type="button"
+									onClick={() => setDeleteOpen(true)}
+									className="flex h-8 w-8 items-center justify-center rounded-full border border-accent/60 text-accent transition hover:bg-accent hover:text-white sm:h-9 sm:w-9"
+									title="Remove"
+								>
+									<Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+								</button>
+							</div>
+						</div>
+
+						<div className="mt-3 flex flex-wrap items-center gap-2 sm:mt-4 sm:gap-3">
+							<div className="flex items-center gap-1.5 text-xs font-semibold text-green-300 sm:gap-2 sm:text-sm">
+								<BookmarkCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+								<span>Saved for later</span>
+							</div>
+						</div>
+
+						<p className="mt-2 hidden text-xs text-muted sm:block">
+							Added {formatDate(item.updatedAt)}
+						</p>
+					</div>
+				</div>
+			</div>
+
+			<ConfirmDialog
+				open={deleteOpen}
+				title="Remove from watchlist?"
+				description={`Are you sure you want to remove "${item.title}" from your watchlist?`}
+				confirmLabel="Remove"
+				loading={deleting}
+				onCancel={() => setDeleteOpen(false)}
+				onConfirm={handleConfirmRemove}
+			/>
+		</>
+	);
+}
+
+function WatchlistList({
+	items,
+	onRemove,
+	onAddToDiary,
+}: {
+	items: DiaryEntry[];
+	onRemove: (entry: DiaryEntry) => void | Promise<void>;
+	onAddToDiary: (entry: DiaryEntry) => void;
+}) {
+	return (
+		<div className="relative z-10 space-y-4">
+			{items.map((item) => (
+				<WatchlistListItem
+					key={`${item.type}-${item.id}`}
+					item={item}
+					onRemove={onRemove}
+					onAddToDiary={onAddToDiary}
+				/>
+			))}
+		</div>
+	);
+}
 
 export default function WatchlistPage() {
 	const [items, setItems] = useState<DiaryEntry[]>([]);
 	const [query, setQuery] = useState("");
 	const [view, setView] = useState<"grid" | "list">("grid");
 	const [activeTab, setActiveTab] = useState<"all" | "movies" | "tv">("all");
-	const [sort, setSort] = useState("Latest");
+	const [sort, setSort] = useState("Recently added");
 	const [filtersOpen, setFiltersOpen] = useState(false);
 	const [selected, setSelected] = useState<DiaryEntry | null>(null);
 
 	const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
-	const [selectedServices, setSelectedServices] = useState<string[]>([]);
-
+	const [minimumRating, setMinimumRating] = useState(0);
+	const [visibleCount, setVisibleCount] = useState(ITEMS_PER_LOAD);
 
 	useEffect(() => {
 		async function loadWatchlist() {
@@ -50,104 +394,86 @@ export default function WatchlistPage() {
 			setItems(list);
 		}
 
-		loadWatchlist();
+		void loadWatchlist();
 	}, []);
 
-async function handleRemove(entry: DiaryEntry) {
-	await removeFromWatchlist(entry.id, entry.type);
-	const list = await getWatchlist();
-	setItems(list);
-}
+	async function handleRemove(entry: DiaryEntry) {
+		await removeFromWatchlist(entry.id, entry.type);
+		const list = await getWatchlist();
+		setItems(list);
+	}
 
-    
-	/* -------------------------
-	   FILTER PIPELINE
-	--------------------------*/
+	useEffect(() => {
+		setVisibleCount(ITEMS_PER_LOAD);
+	}, [activeTab, query, selectedGenres, minimumRating, sort]);
 
 	const filteredItems = useMemo(() => {
-		let result = [...items];
+		const cleanQuery = query.trim().toLowerCase();
 
-		// Tab filter
-		if (activeTab === "movies") {
-			result = result.filter((i) => i.type === "movie");
+		return items.filter((item) => {
+			if (activeTab === "movies" && item.type !== "movie") return false;
+			if (activeTab === "tv" && item.type !== "tv") return false;
+
+			if (cleanQuery && !item.title.toLowerCase().includes(cleanQuery)) {
+				return false;
+			}
+
+		const tmdbRating = getTmdbRating(item);
+
+		if (
+			minimumRating > 0 &&
+			(tmdbRating === null || tmdbRating < minimumRating)
+		) {
+			return false;
 		}
 
-		if (activeTab === "tv") {
-			result = result.filter((i) => i.type === "tv");
-		}
+			if (!itemHasGenre(item, selectedGenres)) {
+				return false;
+			}
 
-		// Search
-		if (query) {
-			result = result.filter((i) =>
-				i.title.toLowerCase().includes(query.toLowerCase()),
-			);
-		}
+			return true;
+		});
+	}, [items, activeTab, query, selectedGenres, minimumRating]);
 
+	const sortedItems = useMemo(() => {
+		return sortWatchlistItems(filteredItems, sort);
+	}, [filteredItems, sort]);
 
-		// Genre filter
-		if (selectedGenres.length > 0) {
-			result = result.filter(
-				(i) => i.genre && selectedGenres.includes(i.genre),
-			);
-		}
+	const visibleItems = useMemo(() => {
+		return sortedItems.slice(0, visibleCount);
+	}, [sortedItems, visibleCount]);
 
-		// Service filter
-		if (selectedServices.length > 0) {
-			result = result.filter(
-				(i) => i.service && selectedServices.includes(i.service),
-			);
-		}
-
-		// Sorting
-		switch (sort) {
-			case "A-Z":
-				result.sort((a, b) => a.title.localeCompare(b.title));
-				break;
-
-			case "Z-A":
-				result.sort((a, b) => b.title.localeCompare(a.title));
-				break;
-
-			case "Oldest":
-				result.sort(
-					(a, b) =>
-						new Date(a.updatedAt).getTime() -
-						new Date(b.updatedAt).getTime(),
-				);
-				break;
-
-			case "Recently Added":
-			default:
-				result.sort(
-					(a, b) =>
-						new Date(b.updatedAt).getTime() -
-						new Date(a.updatedAt).getTime(),
-				);
-		}
-
-		return result;
-	}, [items, activeTab, query, selectedGenres, selectedServices, sort]);
+	const hasMoreItems = visibleCount < sortedItems.length;
 
 	function clearAllFilters() {
 		setSelectedGenres([]);
-		setSelectedServices([]);
+		setMinimumRating(0);
 	}
 
-	const activeFilterCount = selectedGenres.length + selectedServices.length;
+	function toggleGenre(genre: string): void {
+		setSelectedGenres((currentGenres) => {
+			if (currentGenres.includes(genre)) {
+				return currentGenres.filter((item) => item !== genre);
+			}
+
+			return [...currentGenres, genre];
+		});
+	}
+
+	const activeFilterCount =
+		selectedGenres.length + (minimumRating > 0 ? 1 : 0);
 
 	return (
-		<div className="relative px-6 md:px-24 py-10">
-			{/* Swoosh Background */}
+		<div className="relative px-6 py-10 md:px-24">
 			<img
 				src="/images/swoosh.svg"
 				alt=""
-				className="absolute inset-0 w-full h-full object-cover opacity-[0.25] pointer-events-none"
+				className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.25]"
 			/>
 
-			{/* MEDIA TOOLBAR */}
 			<MediaToolbar
 				title="My Watchlist"
-				total={filteredItems.length}
+				total={sortedItems.length}
 				activeTab={activeTab}
 				onTabChange={setActiveTab}
 				sort={sort}
@@ -159,25 +485,54 @@ async function handleRemove(entry: DiaryEntry) {
 				onFilterClick={() => setFiltersOpen(!filtersOpen)}
 			/>
 
-			{/* FILTER PANEL */}
 			{filtersOpen && (
-				<div className="mb-8 p-6 rounded-2xl bg-[#1b1b1b] border border-border">
-					<div className="flex justify-between items-center mb-6">
+				<div className="mb-8 rounded-2xl border border-border bg-[#1b1b1b] p-6">
+					<div className="mb-6 flex items-center justify-between">
 						<h3 className="text-lg font-semibold">Filters</h3>
 
 						{activeFilterCount > 0 && (
 							<button
+								type="button"
 								onClick={clearAllFilters}
-								className="text-accent text-sm hover:underline"
+								className="text-sm text-accent hover:underline"
 							>
 								Clear all
 							</button>
 						)}
 					</div>
 
-					{/* GENRE */}
 					<div className="mb-6">
-						<h4 className="text-xs uppercase tracking-wide text-muted mb-3">
+						<div className="mb-3 flex items-center gap-3">
+							<h4 className="text-xs uppercase tracking-wide text-muted">
+								Minimum TMDB rating
+							</h4>
+
+							<div className="flex items-center gap-1 text-sm font-semibold text-white">
+								<Star className="h-4 w-4 fill-accent text-accent" />
+								{minimumRating.toFixed(1)}
+							</div>
+						</div>
+
+						<input
+							type="range"
+							min="0"
+							max="10"
+							step="0.5"
+							value={minimumRating}
+							onChange={(event) =>
+								setMinimumRating(Number(event.target.value))
+							}
+							className="w-full max-w-md accent-accent"
+						/>
+
+						<div className="mt-2 flex max-w-md justify-between text-xs text-muted">
+							<span>Any</span>
+							<span>10</span>
+						</div>
+					</div>
+
+					<div>
+						<h4 className="mb-3 text-xs uppercase tracking-wide text-muted">
 							Genre
 						</h4>
 
@@ -187,56 +542,16 @@ async function handleRemove(entry: DiaryEntry) {
 
 								return (
 									<button
+										type="button"
 										key={genre}
-										onClick={() => {
-											setSelectedGenres((prev) =>
-												active
-													? prev.filter(
-															(g) => g !== genre,
-														)
-													: [...prev, genre],
-											);
-										}}
-										className={`px-3 py-1.5 rounded-full text-sm transition
-								${active ? "bg-accent text-white" : "bg-[#2a2a2a] text-muted hover:bg-[#333]"}
-							`}
+										onClick={() => toggleGenre(genre)}
+										className={`rounded-full px-3 py-1.5 text-sm transition ${
+											active
+												? "bg-accent text-white"
+												: "bg-[#2a2a2a] text-muted hover:bg-[#333]"
+										}`}
 									>
 										{genre}
-									</button>
-								);
-							})}
-						</div>
-					</div>
-
-					{/* STREAMING SERVICES */}
-					<div>
-						<h4 className="text-xs uppercase tracking-wide text-muted mb-3">
-							Streaming Service
-						</h4>
-
-						<div className="flex flex-wrap gap-2">
-							{SERVICES.map((service) => {
-								const active =
-									selectedServices.includes(service);
-
-								return (
-									<button
-										key={service}
-										onClick={() => {
-											setSelectedServices((prev) =>
-												active
-													? prev.filter(
-															(s) =>
-																s !== service,
-														)
-													: [...prev, service],
-											);
-										}}
-										className={`px-3 py-1.5 rounded-full text-sm transition
-								${active ? "bg-accent text-white" : "bg-[#2a2a2a] text-muted hover:bg-[#333]"}
-							`}
-									>
-										{service}
 									</button>
 								);
 							})}
@@ -245,10 +560,9 @@ async function handleRemove(entry: DiaryEntry) {
 				</div>
 			)}
 
-			{/* GRID VIEW */}
 			{view === "grid" && (
-				<div className="relative z-10 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-6">
-					{filteredItems.map((item) => (
+				<div className="relative z-10 grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7">
+					{visibleItems.map((item) => (
 						<MediaCard
 							key={`${item.type}-${item.id}`}
 							id={item.id}
@@ -269,99 +583,46 @@ async function handleRemove(entry: DiaryEntry) {
 				</div>
 			)}
 
-			{/* LIST VIEW */}
 			{view === "list" && (
-				<div className="space-y-4">
-					{filteredItems.map((item) => (
-						<div
-							key={item.id}
-							className="group relative flex gap-6 p-5 rounded-2xl bg-[#1b1b1b] border border-border transition hover:border-accent"
-						>
-							{/* Poster */}
-							<img
-								src={getPosterUrl(item.poster)}
-								alt={item.title}
-								className="w-24 h-36 object-cover rounded-xl shadow-md"
-							/>
+				<WatchlistList
+					items={visibleItems}
+					onRemove={handleRemove}
+					onAddToDiary={setSelected}
+				/>
+			)}
 
-							{/* Content */}
-							<div className="flex-1 flex flex-col justify-between">
-								<div>
-									<h3 className="text-lg font-semibold">
-										{item.title}
-									</h3>
-
-									<p className="text-sm text-muted capitalize">
-										{item.type === "movie"
-											? "Movie"
-											: "TV Show"}
-									</p>
-
-									{/* Extra Details */}
-									<p className="text-xs text-muted mt-2">
-										Status:{" "}
-										<span className="capitalize">
-											{item.status}
-										</span>
-									</p>
-
-									{item.rating && (
-										<p className="text-xs text-muted">
-											Rating: ★ {item.rating}
-										</p>
-									)}
-
-									<p className="text-xs text-muted">
-										Added:{" "}
-										{new Date(
-											item.updatedAt,
-										).toLocaleDateString()}
-									</p>
-								</div>
-							</div>
-
-							{/* Hover Actions */}
-							<div className="absolute top-4 right-4 flex gap-3 opacity-0 group-hover:opacity-100 transition">
-								{/* Add to diary */}
-								<button
-									onClick={(e) => {
-										e.stopPropagation();
-										setSelected(item);
-									}}
-									className="p-2 rounded-full bg-accent hover:bg-accent/80 transition"
-									title="Add to diary"
-								>
-									<Plus size={16} />
-								</button>
-
-								{/* Trash */}
-								<button
-									onClick={(e) => {
-										e.stopPropagation();
-										handleRemove(item);
-									}}
-									className="p-2 rounded-full bg-red-500 hover:bg-red-600 transition"
-									title="Remove"
-								>
-									<Trash2 size={16} />
-								</button>
-							</div>
-						</div>
-					))}
+			{sortedItems.length === 0 && (
+				<div className="relative z-10 rounded-3xl border border-white/10 bg-white/[0.03] p-8 text-center">
+					<p className="text-sm text-muted">
+						No watchlist items match your search or filters.
+					</p>
 				</div>
+			)}
+
+			{sortedItems.length > 0 && (
+				<LoadMoreButton
+					onClick={() =>
+						setVisibleCount(
+							(currentCount) => currentCount + ITEMS_PER_LOAD,
+						)
+					}
+					hasMore={hasMoreItems}
+					endText="You reached the end of your watchlist."
+				/>
 			)}
 
 			{selected && (
 				<AddToDiaryModal
 					open={true}
 					onClose={() => {
-						// ONLY CLOSE
 						setSelected(null);
 					}}
 					onSave={(status) => {
-						// Only remove if NOT planned
 						if (status !== "planned") {
-							removeFromWatchlist(selected.id, selected.type);
+							void removeFromWatchlist(
+								selected.id,
+								selected.type,
+							);
 
 							setItems((prev) =>
 								prev.filter(
@@ -385,34 +646,6 @@ async function handleRemove(entry: DiaryEntry) {
 					}}
 				/>
 			)}
-
-			{/* {selected && (
-				<AddToDiaryModal
-					open={true}
-					onClose={() => {
-						if (selected) {
-							removeFromWatchlist(selected.id, selected.type);
-							setItems((prev) =>
-								prev.filter(
-									(i) =>
-										!(
-											i.id === selected.id &&
-											i.type === selected.type
-										),
-								),
-							);
-						}
-						setSelected(null);
-					}}
-					content={{
-						id: selected.id,
-						type: selected.type,
-						title: selected.title,
-						poster: selected.poster,
-						backdrop: selected.backdrop ?? selected.poster,
-					}}
-				/>
-			)} */}
 		</div>
 	);
 }

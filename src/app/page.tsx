@@ -226,14 +226,10 @@
 
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import useSWRInfinite from "swr/infinite";
-import {
-	Filter as FilterIcon,
-	SlidersHorizontal,
-	Star,
-	X,
-} from "lucide-react";
+import { Filter as FilterIcon, SlidersHorizontal, Star, X } from "lucide-react";
+
 import SearchBar from "@/components/diary/search-bar";
 import BrowseSortDropdown, {
 	type BrowseSort,
@@ -241,6 +237,7 @@ import BrowseSortDropdown, {
 import HeroCarousel from "@/components/home/hero-carousel";
 import HeroCarouselSkeleton from "@/components/home/hero-carousel-skeleton";
 import MediaCard from "@/components/media/media-card";
+import LoadMoreButton from "@/components/ui/load-more-button";
 
 import { fetcher } from "@/utils/fetcher";
 import type { Movie, TvShow, TMDBListResponse } from "@/types";
@@ -251,6 +248,8 @@ type BrowseType = "all" | "movie" | "tv";
 type BrowseItem = (Movie | TvShow) & {
 	media_type: MediaType;
 };
+
+const ITEMS_PER_LOAD = 24;
 
 const genres = [
 	"Action",
@@ -267,13 +266,12 @@ const genres = [
 	"Crime",
 ];
 
-
-
 const getTrendingKey = (
 	pageIndex: number,
 	prev: TMDBListResponse<Movie | TvShow> | null,
 ) => {
 	if (prev && pageIndex + 1 > prev.total_pages) return null;
+
 	return `/api/tmdb/trending?type=all&timeWindow=week&page=${pageIndex + 1}`;
 };
 
@@ -332,8 +330,7 @@ export default function HomePage() {
 	const [minimumRating, setMinimumRating] = useState(0);
 	const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
 	const [filtersOpen, setFiltersOpen] = useState(false);
-
-	const loadMoreRef = useRef<HTMLDivElement | null>(null);
+	const [visibleCount, setVisibleCount] = useState(ITEMS_PER_LOAD);
 
 	const debouncedSearch = useDebouncedValue(search, 250);
 
@@ -383,14 +380,23 @@ export default function HomePage() {
 		browsePages?.flatMap((page) => page.results) ?? [],
 	);
 
+	const visibleBrowseItems = browseItems.slice(0, visibleCount);
+
 	const lastBrowsePage = browsePages?.[browsePages.length - 1] ?? null;
 
 	const hasMoreBrowse =
 		lastBrowsePage !== null &&
 		lastBrowsePage.page < lastBrowsePage.total_pages;
 
+	const hasMoreVisibleItems =
+		visibleCount < browseItems.length || hasMoreBrowse;
+
+	const initialLoading = !browsePages && browseValidating;
+	const loadingMore = browseValidating && Boolean(browsePages);
+
 	useEffect(() => {
 		setBrowseSize(1);
+		setVisibleCount(ITEMS_PER_LOAD);
 	}, [
 		debouncedSearch,
 		type,
@@ -399,33 +405,6 @@ export default function HomePage() {
 		selectedGenresQuery,
 		setBrowseSize,
 	]);
-
-	useEffect(() => {
-		const element = loadMoreRef.current;
-
-		if (!element) return;
-
-		const observer = new IntersectionObserver(
-			(entries) => {
-				const entry = entries[0];
-
-				if (
-					entry.isIntersecting &&
-					hasMoreBrowse &&
-					!browseValidating
-				) {
-					setBrowseSize(browseSize + 1);
-				}
-			},
-			{
-				rootMargin: "700px",
-			},
-		);
-
-		observer.observe(element);
-
-		return () => observer.disconnect();
-	}, [browseSize, setBrowseSize, hasMoreBrowse, browseValidating]);
 
 	function toggleGenre(genre: string): void {
 		setSelectedGenres((currentGenres) => {
@@ -443,6 +422,18 @@ export default function HomePage() {
 		setMinimumRating(0);
 		setSelectedGenres([]);
 		setSearch("");
+	}
+
+	function loadMore(): void {
+		if (browseValidating) return;
+
+		const nextVisibleCount = visibleCount + ITEMS_PER_LOAD;
+
+		setVisibleCount(nextVisibleCount);
+
+		if (nextVisibleCount >= browseItems.length && hasMoreBrowse) {
+			setBrowseSize(browseSize + 1);
+		}
 	}
 
 	return (
@@ -481,7 +472,7 @@ export default function HomePage() {
 						<button
 							type="button"
 							onClick={() => setFiltersOpen(true)}
-							className="flex h-10 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-6 text-sm font-bold transition hover:bg-white/[0.1] ml-auto"
+							className="ml-auto flex h-10 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-6 text-sm font-bold transition hover:bg-white/[0.1]"
 						>
 							<SlidersHorizontal className="h-4 w-4" />
 							Filters
@@ -496,55 +487,68 @@ export default function HomePage() {
 					</div>
 				)}
 
-				<div className="grid grid-cols-2 gap-x-5 gap-y-9 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6">
-					{browseItems.map((item) => {
-						const mediaType = getItemType(item);
+				{initialLoading && (
+					<div className="grid grid-cols-2 gap-x-5 gap-y-9 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6">
+						{Array.from({ length: ITEMS_PER_LOAD }).map(
+							(_, index) => (
+								<div
+									key={index}
+									className="aspect-[2/3] animate-pulse rounded-xl border border-white/10 bg-white/[0.04]"
+								/>
+							),
+						)}
+					</div>
+				)}
 
-						if (!mediaType || !item.id || !item.poster_path) {
-							return null;
-						}
+				{!initialLoading && (
+					<>
+						<div className="grid grid-cols-2 gap-x-5 gap-y-9 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6">
+							{visibleBrowseItems.map((item) => {
+								const mediaType = getItemType(item);
 
-						return (
-							<MediaCard
-								key={`${mediaType}-${item.id}`}
-								id={item.id}
-								type={mediaType}
-								title={getItemTitle(item)}
-								posterPath={item.poster_path}
-								backdropPath={
-									item.backdrop_path ?? item.poster_path
+								if (
+									!mediaType ||
+									!item.id ||
+									!item.poster_path
+								) {
+									return null;
 								}
-								rating={item.vote_average}
-								variant="default"
+
+								return (
+									<MediaCard
+										key={`${mediaType}-${item.id}`}
+										id={item.id}
+										type={mediaType}
+										title={getItemTitle(item)}
+										posterPath={item.poster_path}
+										backdropPath={
+											item.backdrop_path ??
+											item.poster_path
+										}
+										rating={item.vote_average}
+										variant="default"
+									/>
+								);
+							})}
+						</div>
+
+						{!browseError && visibleBrowseItems.length === 0 ? (
+							<div className="flex justify-center py-12">
+								<p className="rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4 text-sm text-muted">
+									No results found.
+								</p>
+							</div>
+						) : (
+							<LoadMoreButton
+								onClick={loadMore}
+								loading={loadingMore}
+								disabled={browseValidating}
+								hasMore={hasMoreVisibleItems}
+								endText="You reached the end."
 							/>
-						);
-					})}
-				</div>
-
-				<div
-					ref={loadMoreRef}
-					className="flex min-h-24 items-center justify-center py-10"
-				>
-					{browseValidating && (
-						<p className="text-sm text-muted">Loading more...</p>
-					)}
-
-					{!browseValidating &&
-						!browseError &&
-						browseItems.length === 0 && (
-							<p className="text-sm text-muted">
-								No results found.
-							</p>
 						)}
-
-					{!browseValidating &&
-						browseItems.length > 0 &&
-						!hasMoreBrowse && (
-							<p className="text-sm text-muted">
-								You reached the end.
-							</p>
-						)}
-				</div>
+					</>
+				)}
 			</section>
 
 			{filtersOpen && (
@@ -560,6 +564,7 @@ export default function HomePage() {
 						<div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
 							<div className="flex items-center gap-3">
 								<FilterIcon className="h-5 w-5" />
+
 								<h2 className="text-2xl font-black">Filters</h2>
 							</div>
 

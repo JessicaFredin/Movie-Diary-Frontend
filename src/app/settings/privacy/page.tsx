@@ -1,34 +1,81 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
 	ArrowLeft,
-	Users,
 	BookOpen,
+	Check,
 	Eye,
-	Star,
 	Globe,
+	Lock,
+	UserCheck,
 	UserPlus,
+	Users,
+	X,
 } from "lucide-react";
+
 import { createClient } from "@/lib/supabase/client";
 import {
 	getOrCreateUserSettings,
 	saveUserSettings,
 	type UserSettings,
 } from "@/utils/settings-storage";
+import {
+	getAllowedFriendIds,
+	getFriendOptions,
+	getPendingDiaryRequests,
+	respondToDiaryRequest,
+	saveAllowedFriends,
+	type DiaryAccessRequest,
+	type DiaryVisibility,
+	type FriendOption,
+} from "@/utils/diary-privacy-storage";
 
 type PrivacyState = {
 	public_profile: boolean;
-	public_diary: boolean;
 	public_watchlist: boolean;
-	public_ratings: boolean;
 	show_online_status: boolean;
 	allow_friend_requests: boolean;
+	diary_visibility: DiaryVisibility;
 };
 
+const diaryVisibilityOptions: {
+	value: DiaryVisibility;
+	title: string;
+	description: string;
+	icon: typeof Globe;
+}[] = [
+	{
+		value: "public",
+		title: "Public diary",
+		description: "Everyone can see your diary at all times.",
+		icon: Globe,
+	},
+	{
+		value: "private_request",
+		title: "Private with requests",
+		description:
+			"Users must request access and you approve or reject them.",
+		icon: Lock,
+	},
+	{
+		value: "friends",
+		title: "Friends only",
+		description: "Only your friends can see your diary.",
+		icon: Users,
+	},
+	{
+		value: "selected_friends",
+		title: "Selected friends",
+		description: "Only friends you choose can see your diary.",
+		icon: UserCheck,
+	},
+];
+
 const privacyOptions: {
-	key: keyof PrivacyState;
+	key: keyof Omit<PrivacyState, "diary_visibility">;
 	label: string;
 	description: string;
 	icon: typeof Users;
@@ -36,37 +83,25 @@ const privacyOptions: {
 	{
 		key: "public_profile",
 		label: "Public Profile",
-		description: "Anyone can view your profile",
+		description: "Anyone can view your profile.",
 		icon: Users,
-	},
-	{
-		key: "public_diary",
-		label: "Public Diary",
-		description: "Share your watch diary with everyone",
-		icon: BookOpen,
 	},
 	{
 		key: "public_watchlist",
 		label: "Public Watchlist",
-		description: "Let others see what you plan to watch",
+		description: "Let others see what you plan to watch.",
 		icon: Eye,
-	},
-	{
-		key: "public_ratings",
-		label: "Public Ratings",
-		description: "Show your ratings to other users",
-		icon: Star,
 	},
 	{
 		key: "show_online_status",
 		label: "Online Status",
-		description: "Show when you're active",
+		description: "Show when you're active.",
 		icon: Globe,
 	},
 	{
 		key: "allow_friend_requests",
 		label: "Friend Requests",
-		description: "Allow others to send requests",
+		description: "Allow others to send friend requests.",
 		icon: UserPlus,
 	},
 ];
@@ -77,6 +112,12 @@ export default function PrivacyPage() {
 
 	const [userSettings, setUserSettings] = useState<UserSettings | null>(null);
 	const [settings, setSettings] = useState<PrivacyState | null>(null);
+	const [friends, setFriends] = useState<FriendOption[]>([]);
+	const [selectedFriendIds, setSelectedFriendIds] = useState<string[]>([]);
+	const [pendingRequests, setPendingRequests] = useState<
+		DiaryAccessRequest[]
+	>([]);
+
 	const [loading, setLoading] = useState(true);
 	const [saving, setSaving] = useState(false);
 	const [message, setMessage] = useState("");
@@ -84,6 +125,7 @@ export default function PrivacyPage() {
 	useEffect(() => {
 		async function loadSettings(): Promise<void> {
 			setLoading(true);
+			setMessage("");
 
 			const {
 				data: { user },
@@ -104,27 +146,38 @@ export default function PrivacyPage() {
 			const { data: profileData } = await supabase
 				.from("profiles")
 				.select(
-					"is_public, is_private_diary, allow_friend_requests, show_online_status",
+					"is_public, diary_visibility, is_private_diary, allow_friend_requests, show_online_status",
 				)
 				.eq("id", user.id)
 				.maybeSingle();
 
 			const profile = profileData as {
 				is_public: boolean | null;
+				diary_visibility: DiaryVisibility | null;
 				is_private_diary: boolean | null;
 				allow_friend_requests: boolean | null;
 				show_online_status: boolean | null;
 			} | null;
 
+			const loadedFriends = await getFriendOptions(supabase, user.id);
+			const allowedIds = await getAllowedFriendIds(supabase, user.id);
+			const requests = await getPendingDiaryRequests(supabase, user.id);
+
 			setUserSettings(savedSettings);
+			setFriends(loadedFriends);
+			setSelectedFriendIds(allowedIds);
+			setPendingRequests(requests);
 
 			setSettings({
 				public_profile: profile?.is_public ?? true,
-				public_diary: !(profile?.is_private_diary ?? true),
 				public_watchlist: savedSettings.public_watchlist,
-				public_ratings: savedSettings.public_ratings,
 				show_online_status: profile?.show_online_status ?? false,
 				allow_friend_requests: profile?.allow_friend_requests ?? true,
+				diary_visibility:
+					profile?.diary_visibility ??
+					(profile?.is_private_diary === false
+						? "public"
+						: "private_request"),
 			});
 
 			setLoading(false);
@@ -133,7 +186,7 @@ export default function PrivacyPage() {
 		void loadSettings();
 	}, [supabase]);
 
-	function toggle(key: keyof PrivacyState): void {
+	function toggle(key: keyof Omit<PrivacyState, "diary_visibility">): void {
 		setSettings((current) =>
 			current
 				? {
@@ -142,6 +195,35 @@ export default function PrivacyPage() {
 					}
 				: current,
 		);
+	}
+
+	function toggleAllowedFriend(friendId: string): void {
+		setSelectedFriendIds((current) => {
+			if (current.includes(friendId)) {
+				return current.filter((id) => id !== friendId);
+			}
+
+			return [...current, friendId];
+		});
+	}
+
+	async function handleRequestResponse(
+		requestId: string,
+		status: "approved" | "rejected",
+	): Promise<void> {
+		try {
+			await respondToDiaryRequest(supabase, requestId, status);
+
+			setPendingRequests((current) =>
+				current.filter((request) => request.id !== requestId),
+			);
+		} catch (error) {
+			setMessage(
+				error instanceof Error
+					? error.message
+					: "Could not update request.",
+			);
+		}
 	}
 
 	async function handleSave(): Promise<void> {
@@ -163,22 +245,26 @@ export default function PrivacyPage() {
 			await saveUserSettings(supabase, {
 				...userSettings,
 				public_watchlist: settings.public_watchlist,
-				public_ratings: settings.public_ratings,
 			});
+
+			const isPublicDiary = settings.diary_visibility === "public";
 
 			const { error } = await supabase
 				.from("profiles")
 				.update({
 					is_public: settings.public_profile,
-					is_private_diary: !settings.public_diary,
+					diary_visibility: settings.diary_visibility,
+					is_private_diary: !isPublicDiary,
 					allow_friend_requests: settings.allow_friend_requests,
 					show_online_status: settings.show_online_status,
 					updated_at: new Date().toISOString(),
 				})
 				.eq("id", user.id);
 
-			if (error) {
-				throw new Error(error.message);
+			if (error) throw error;
+
+			if (settings.diary_visibility === "selected_friends") {
+				await saveAllowedFriends(supabase, user.id, selectedFriendIds);
 			}
 
 			setMessage("Privacy settings saved.");
@@ -207,6 +293,227 @@ export default function PrivacyPage() {
 
 				<h1 className="text-xl font-semibold">Privacy</h1>
 			</div>
+
+			<div className="rounded-3xl border border-border bg-surface p-6 shadow-lg">
+				<div className="mb-5 flex items-center gap-3">
+					<div className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-muted">
+						<BookOpen size={18} className="text-muted" />
+					</div>
+
+					<div>
+						<h2 className="font-semibold">Diary visibility</h2>
+						<p className="text-sm text-muted">
+							Choose who can see your diary.
+						</p>
+					</div>
+				</div>
+
+				<div className="grid gap-3">
+					{diaryVisibilityOptions.map((option) => {
+						const Icon = option.icon;
+						const active =
+							settings?.diary_visibility === option.value;
+
+						return (
+							<button
+								type="button"
+								key={option.value}
+								disabled={loading || !settings}
+								onClick={() =>
+									setSettings((current) =>
+										current
+											? {
+													...current,
+													diary_visibility:
+														option.value,
+												}
+											: current,
+									)
+								}
+								className={`flex items-start gap-4 rounded-2xl border p-4 text-left transition disabled:opacity-50 ${
+									active
+										? "border-accent bg-accent/10"
+										: "border-border bg-surface-muted hover:bg-white/5"
+								}`}
+							>
+								<div
+									className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+										active
+											? "bg-accent text-white"
+											: "bg-black/20 text-muted"
+									}`}
+								>
+									<Icon size={18} />
+								</div>
+
+								<div className="flex-1">
+									<p className="font-semibold">
+										{option.title}
+									</p>
+									<p className="mt-1 text-sm text-muted">
+										{option.description}
+									</p>
+								</div>
+
+								{active && (
+									<Check className="mt-1 h-5 w-5 text-accent" />
+								)}
+							</button>
+						);
+					})}
+				</div>
+
+				{settings?.diary_visibility === "selected_friends" && (
+					<div className="mt-6 rounded-2xl border border-border bg-black/20 p-4">
+						<h3 className="font-semibold">
+							Choose allowed friends
+						</h3>
+
+						{friends.length === 0 ? (
+							<p className="mt-2 text-sm text-muted">
+								You do not have any friends to select yet.
+							</p>
+						) : (
+							<div className="mt-4 space-y-3">
+								{friends.map((friend) => {
+									const selected = selectedFriendIds.includes(
+										friend.id,
+									);
+
+									return (
+										<button
+											type="button"
+											key={friend.id}
+											onClick={() =>
+												toggleAllowedFriend(friend.id)
+											}
+											className="flex w-full items-center justify-between rounded-xl bg-surface-muted px-4 py-3 text-left transition hover:bg-white/5"
+										>
+											<div className="flex items-center gap-3">
+												<div className="relative h-9 w-9 overflow-hidden rounded-full bg-accent">
+													{friend.avatar_url ? (
+														<Image
+															src={
+																friend.avatar_url
+															}
+															alt={
+																friend.display_name
+															}
+															fill
+															className="object-cover"
+														/>
+													) : (
+														<div className="flex h-full w-full items-center justify-center text-sm font-bold text-white">
+															{friend.display_name
+																.charAt(0)
+																.toUpperCase()}
+														</div>
+													)}
+												</div>
+
+												<span className="font-medium">
+													{friend.display_name}
+												</span>
+											</div>
+
+											<div
+												className={`flex h-6 w-6 items-center justify-center rounded-full border ${
+													selected
+														? "border-accent bg-accent text-white"
+														: "border-border"
+												}`}
+											>
+												{selected && (
+													<Check className="h-4 w-4" />
+												)}
+											</div>
+										</button>
+									);
+								})}
+							</div>
+						)}
+					</div>
+				)}
+			</div>
+
+			{pendingRequests.length > 0 && (
+				<div className="rounded-3xl border border-border bg-surface p-6 shadow-lg">
+					<h2 className="font-semibold">Diary access requests</h2>
+
+					<div className="mt-4 space-y-3">
+						{pendingRequests.map((request) => (
+							<div
+								key={request.id}
+								className="flex items-center justify-between gap-4 rounded-2xl bg-surface-muted px-4 py-3"
+							>
+								<div className="flex items-center gap-3">
+									<div className="relative h-10 w-10 overflow-hidden rounded-full bg-accent">
+										{request.requester?.avatar_url ? (
+											<Image
+												src={
+													request.requester.avatar_url
+												}
+												alt={
+													request.requester
+														.display_name
+												}
+												fill
+												className="object-cover"
+											/>
+										) : (
+											<div className="flex h-full w-full items-center justify-center font-bold text-white">
+												{request.requester?.display_name
+													?.charAt(0)
+													.toUpperCase() ?? "U"}
+											</div>
+										)}
+									</div>
+
+									<div>
+										<p className="font-medium">
+											{request.requester?.display_name ??
+												"User"}
+										</p>
+										<p className="text-sm text-muted">
+											Wants to see your diary.
+										</p>
+									</div>
+								</div>
+
+								<div className="flex gap-2">
+									<button
+										type="button"
+										onClick={() =>
+											handleRequestResponse(
+												request.id,
+												"approved",
+											)
+										}
+										className="flex h-9 w-9 items-center justify-center rounded-full bg-green-500/15 text-green-300 transition hover:bg-green-500 hover:text-white"
+										aria-label="Approve"
+									>
+										<Check className="h-4 w-4" />
+									</button>
+
+									<button
+										type="button"
+										onClick={() =>
+											handleRequestResponse(
+												request.id,
+												"rejected",
+											)
+										}
+										className="flex h-9 w-9 items-center justify-center rounded-full bg-red-500/15 text-red-300 transition hover:bg-red-500 hover:text-white"
+										aria-label="Reject"
+									>
+										<X className="h-4 w-4" />
+									</button>
+								</div>
+							</div>
+						))}
+					</div>
+				</div>
+			)}
 
 			<div className="overflow-hidden rounded-3xl border border-border bg-surface shadow-lg">
 				{privacyOptions.map((option) => {

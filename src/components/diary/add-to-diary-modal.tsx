@@ -752,6 +752,8 @@ type Props = {
 		title: string;
 		poster: string;
 		backdrop: string;
+		genreIds?: number[];
+		genreNames?: string[];
 		genres?: GenreSnapshot[];
 	};
 	initialData?: DiaryEntry;
@@ -1002,8 +1004,27 @@ export default function AddToDiaryModal({
 				progress,
 				rating: status === "planned" ? null : rating,
 				updatedAt: new Date().toISOString(),
-				genreIds: content.genres?.map((genre) => genre.id) ?? [],
-				genreNames: content.genres?.map((genre) => genre.name) ?? [],
+			
+				genreIds:
+					content.genreIds ??
+					content.genres?.map((genre) => genre.id).filter(Boolean) ??
+					[],
+				genreNames:
+					content.genreNames ??
+					content.genres
+						?.map((genre) => genre.name)
+						.filter(Boolean) ??
+					[],
+				genres:
+					content.genres ??
+					content.genreIds?.map((id) => ({
+						id,
+						name:
+							content.genreNames?.find(
+								(_, index) => content.genreIds?.[index] === id,
+							) ?? "",
+					})) ??
+					[],
 			};
 
 			if (status === "planned") {

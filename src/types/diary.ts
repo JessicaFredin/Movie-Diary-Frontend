@@ -29,4 +29,6 @@ export type DiaryEntry = {
 
 	genreIds?: number[];
 	genreNames?: string[];
+
+	genres?: Array<{ id?: number; name?: string } | string>;
 };

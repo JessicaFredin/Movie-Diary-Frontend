@@ -651,6 +651,7 @@ import TvDiaryActions from "@/components/details/tv-diary-actions";
 import MediaRatings from "@/components/media/media-ratings";
 import RateMediaButton from "@/components/media/rate-media-button";
 import MediaFriendActivity from "@/components/media/media-friend-activity";
+import { GENRE_MAP } from "@/constants/genres";
 
 import { getPosterUrl } from "@/utils/tmdb-image";
 import {
@@ -690,6 +691,15 @@ type InfoModalState = {
 	title: string;
 	message: string;
 	type: "info" | "confirm";
+};
+
+type GenreSnapshot = {
+	id: number;
+	name: string;
+};
+
+type MediaWithGenreIds = Media & {
+	genre_ids?: number[];
 };
 
 /* ===== TYPE GUARD ===== */
@@ -738,6 +748,31 @@ export default function MediaHeroContent({ media }: MediaHeroContentProps) {
 			: "—";
 
 	const genres = media.genres ?? [];
+
+	const genreIds =
+		genres.length > 0
+			? genres.map((genre) => genre.id)
+			: ((media as MediaWithGenreIds).genre_ids ?? []);
+
+	const genreNames =
+		genres.length > 0
+			? genres.map((genre) => genre.name)
+			: genreIds.map((genreId) => GENRE_MAP[genreId]).filter(Boolean);
+
+	const genreSnapshots: GenreSnapshot[] =
+		genres.length > 0
+			? genres.map((genre) => ({
+					id: genre.id,
+					name: genre.name,
+				}))
+			: genreIds
+					.map((genreId) => ({
+						id: genreId,
+						name: GENRE_MAP[genreId],
+					}))
+					.filter((genre): genre is GenreSnapshot =>
+						Boolean(genre.name),
+					);
 
 	const loadSavedState = useCallback(async (): Promise<void> => {
 		const [watchlist, diary] = await Promise.all([
@@ -914,8 +949,11 @@ export default function MediaHeroContent({ media }: MediaHeroContentProps) {
 				backdrop: backdropUrl,
 				status: "planned",
 				progress: undefined,
-				rating: null,
+				rating: media.vote_average ?? null,
 				updatedAt: new Date().toISOString(),
+				genreIds,
+				genreNames,
+				genres: genreSnapshots,
 			};
 
 			await addToWatchlist(entry);
@@ -1057,40 +1095,20 @@ export default function MediaHeroContent({ media }: MediaHeroContentProps) {
 						{/* Actions */}
 						<div className="max-w-sm space-y-4">
 							{movie ? (
-								// <MovieDiaryActions
-								// 	id={media.id}
-								// 	title={title}
-								// 	poster={getPosterUrl(media.poster_path)}
-								// 	backdrop={getPosterUrl(media.backdrop_path)}
-								// />
-
 								<MovieDiaryActions
 									id={media.id}
 									title={title}
 									poster={getPosterUrl(media.poster_path)}
 									backdrop={getPosterUrl(media.backdrop_path)}
-									genres={genres.map((genre) => ({
-										id: genre.id,
-										name: genre.name,
-									}))}
+									genres={genreSnapshots}
 								/>
 							) : (
-								// <TvDiaryActions
-								// 	id={media.id}
-								// 	title={title}
-								// 	poster={getPosterUrl(media.poster_path)}
-								// 	backdrop={getPosterUrl(media.backdrop_path)}
-								// 	/>
-
 								<TvDiaryActions
 									id={media.id}
 									title={title}
 									poster={getPosterUrl(media.poster_path)}
 									backdrop={getPosterUrl(media.backdrop_path)}
-									genres={genres.map((genre) => ({
-										id: genre.id,
-										name: genre.name,
-									}))}
+									genres={genreSnapshots}
 								/>
 							)}
 
