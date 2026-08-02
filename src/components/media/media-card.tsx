@@ -13,6 +13,8 @@ import {
 	CheckCircle2,
 } from "lucide-react";
 
+import NoteIndicator from "@/components/media/note-indicator";
+import MediaNotesModal from "@/components/media/media-notes-modal";
 import AddToDiaryModal from "@/components/diary/add-to-diary-modal";
 import { createClient } from "@/lib/supabase/client";
 import { removeDiaryEntry } from "@/utils/diary-storage";
@@ -193,6 +195,7 @@ export default function MediaCard({
 	);
 
 	const [modalOpen, setModalOpen] = useState(false);
+	const [notesOpen, setNotesOpen] = useState(false);
 	const [checkingDiary, setCheckingDiary] = useState(true);
 	const [message, setMessage] = useState("");
 	const [deleting, setDeleting] = useState(false);
@@ -306,7 +309,7 @@ export default function MediaCard({
 	}, [mediaId, mediaType, supabase, initialDiaryEntry, isWatchlist]);
 
 	useEffect(() => {
-		loadDiaryStatus();
+		void loadDiaryStatus();
 	}, [loadDiaryStatus]);
 
 	async function handleAddOrEditClick() {
@@ -455,6 +458,23 @@ export default function MediaCard({
 						/>
 
 						<div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/25 to-transparent" />
+
+						{/* NOTE INDICATOR */}
+						{mediaId && (
+							<div
+								className="absolute left-3 top-3 z-30"
+								onClick={(event) => event.stopPropagation()}
+							>
+								<NoteIndicator
+									mediaId={mediaId}
+									mediaType={mediaType}
+									onClick={(event) => {
+										event.stopPropagation();
+										setNotesOpen(true);
+									}}
+								/>
+							</div>
+						)}
 
 						{/* ACTIONS */}
 						{!readOnly && (
@@ -642,6 +662,17 @@ export default function MediaCard({
 					}}
 					initialData={diaryEntry ?? watchlistEntry ?? undefined}
 					onSave={refreshAfterSave}
+				/>
+			)}
+
+			{notesOpen && mediaId && (
+				<MediaNotesModal
+					open={notesOpen}
+					onClose={() => setNotesOpen(false)}
+					mediaId={mediaId}
+					mediaType={mediaType}
+					title={mediaTitle}
+					posterPath={mediaPosterPath}
 				/>
 			)}
 

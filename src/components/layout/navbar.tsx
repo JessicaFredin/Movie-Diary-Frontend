@@ -14,6 +14,7 @@ import {
 	Settings,
 	LogOut,
 	Bell,
+	StickyNote,
 } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
@@ -31,6 +32,7 @@ const profileNavItems = [
 	{ label: "Profile", href: "/profile", icon: User },
 	{ label: "My Diary", href: "/my-diary", icon: Notebook },
 	{ label: "My Watchlist", href: "/my-watchlist", icon: Bookmark },
+	{ label: "My Notes", href: "/my-notes", icon: StickyNote },
 	{ label: "My Friends", href: "/friends", icon: Users },
 	{ label: "Settings", href: "/settings", icon: Settings },
 ];
@@ -502,6 +504,14 @@ export default function Navbar() {
 								className="block text-muted hover:text-white"
 							>
 								My Friends
+							</Link>
+
+							<Link
+								href="/friends"
+								onClick={() => setOpen(false)}
+								className="block text-muted hover:text-white"
+							>
+								My Notes
 							</Link>
 
 							<Link
