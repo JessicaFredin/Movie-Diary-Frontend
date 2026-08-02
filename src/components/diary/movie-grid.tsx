@@ -50,6 +50,7 @@ export default function MovieGrid({ items = [], onDiaryChanged }: Props) {
 					posterPath={entry.poster}
 					backdropPath={entry.backdrop ?? entry.poster}
 					rating={entry.rating}
+					ratingKind="user"
 					initialDiaryEntry={entry}
 					onDiaryChanged={onDiaryChanged}
 					variant="default"

@@ -172,7 +172,13 @@ function mapDbToWatchlistItem(row: DbWatchlistItem): DiaryEntry {
 		backdrop: row.backdrop_path_snapshot ?? row.poster_path_snapshot ?? "",
 		status: "planned",
 		progress: undefined,
-		rating: row.rating ?? null,
+
+		// Watchlist does not use personal user rating.
+		rating: null,
+
+		// Supabase watchlist_items.rating stores TMDB rating.
+		tmdbRating: row.rating ?? null,
+
 		updatedAt: row.updated_at ?? row.created_at,
 		genreIds: row.genre_ids ?? [],
 		genreNames: row.genre_names ?? [],
@@ -228,7 +234,10 @@ export async function addToWatchlist(entry: DiaryEntry) {
 		poster_path_snapshot: entry.poster ?? null,
 		backdrop_path_snapshot: entry.backdrop ?? entry.poster ?? null,
 		status: "planned",
-		rating: entry.rating ?? null,
+
+		// Store TMDB rating in watchlist_items.rating.
+		rating: entry.tmdbRating ?? null,
+
 		genre_ids: genreIds,
 		genre_names: genreNames,
 		genres,

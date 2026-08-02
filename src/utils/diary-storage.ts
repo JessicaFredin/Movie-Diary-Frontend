@@ -227,7 +227,12 @@ function mapDbToDiaryEntry(
 		backdrop: row.backdrop_path_snapshot ?? row.poster_path_snapshot ?? "",
 		status: row.status,
 		progress: row.progress ?? undefined,
+
+		// My Diary uses personal rating.
 		rating: userRating ?? row.rating ?? null,
+
+		// Not needed here.
+		tmdbRating: null,
 		review: row.review ?? undefined,
 		genreIds: row.genre_ids ?? [],
 		genreNames: row.genre_names ?? [],

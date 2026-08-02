@@ -146,7 +146,7 @@ function getItemGenres(entry: DiaryEntry): string[] {
 }
 
 function getTmdbRating(entry: DiaryEntry): number | null {
-	const rawRating = entry.rating as unknown;
+	const rawRating = entry.tmdbRating as unknown;
 
 	if (typeof rawRating === "number" && rawRating > 0) {
 		return rawRating;
@@ -570,7 +570,8 @@ export default function WatchlistPage() {
 							title={item.title}
 							posterPath={item.poster}
 							backdropPath={item.backdrop ?? item.poster}
-							rating={item.rating}
+							rating={item.tmdbRating}
+							ratingKind="tmdb"
 							variant="watchlist"
 							onWatchlistRemove={() => handleRemove(item)}
 							onWatchlistSave={(status) => {

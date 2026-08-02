@@ -949,7 +949,13 @@ export default function MediaHeroContent({ media }: MediaHeroContentProps) {
 				backdrop: backdropUrl,
 				status: "planned",
 				progress: undefined,
-				rating: media.vote_average ?? null,
+
+				// Personal rating should not be used on watchlist.
+				rating: null,
+
+				// Watchlist uses TMDB rating.
+				tmdbRating: media.vote_average ?? null,
+
 				updatedAt: new Date().toISOString(),
 				genreIds,
 				genreNames,

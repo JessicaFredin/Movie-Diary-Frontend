@@ -22,6 +22,7 @@ import ConfirmDialog from "@/components/ui/confirm-dialog";
 
 type MediaType = "movie" | "tv";
 type CardVariant = "default" | "compact" | "large" | "row" | "watchlist";
+type RatingKind = "tmdb" | "user";
 
 type TmdbMedia = {
 	id: number;
@@ -67,6 +68,7 @@ type Props = {
 	posterPath?: string | null;
 	backdropPath?: string | null;
 	rating?: number | null;
+	ratingKind?: RatingKind;
 
 	variant?: CardVariant;
 	showDeleteButton?: boolean;
@@ -157,6 +159,7 @@ export default function MediaCard({
 	posterPath,
 	backdropPath,
 	rating,
+	ratingKind = "tmdb",
 	variant = "default",
 	showDeleteButton = true,
 	onDiaryChanged,
@@ -177,6 +180,9 @@ export default function MediaCard({
 	const mediaBackdropPath =
 		backdropPath ?? media?.backdrop_path ?? mediaPosterPath;
 	const mediaRating = rating ?? media?.vote_average ?? null;
+
+	const showRating = typeof mediaRating === "number" && mediaRating > 0;
+	const isUserRating = ratingKind === "user";
 
 	const [diaryEntry, setDiaryEntry] = useState<DiaryEntry | null>(
 		isWatchlist ? null : (initialDiaryEntry ?? null),
@@ -363,6 +369,7 @@ export default function MediaCard({
 				status: "planned",
 				progress: undefined,
 				rating: null,
+				tmdbRating: mediaRating,
 				updatedAt: new Date().toISOString(),
 			} as DiaryEntry);
 
@@ -408,6 +415,20 @@ export default function MediaCard({
 	})();
 
 	const isPositiveStatus = isAdded || isWatchlist || isPlanned;
+
+	const ratingBadge =
+		showRating && mediaRating !== null && mediaRating !== undefined ? (
+			<span className="ml-auto flex items-center gap-1 rounded-full bg-black/75 px-2 py-0.5 text-xs font-bold text-white">
+				<Star
+					className={`h-3 w-3 ${
+						isUserRating
+							? "fill-yellow-400 text-yellow-400"
+							: "fill-accent text-accent"
+					}`}
+				/>
+				{mediaRating.toFixed(1)}
+			</span>
+		) : null;
 
 	return (
 		<>
@@ -540,7 +561,7 @@ export default function MediaCard({
 								{mediaTitle}
 							</h3>
 
-							<div className="mt-1 flex items-center justify-between gap-2">
+							<div className="mt-1 flex items-center gap-2">
 								<p
 									className={`flex items-center gap-1 text-xs ${
 										isPositiveStatus
@@ -554,13 +575,11 @@ export default function MediaCard({
 									{bottomStatusText}
 								</p>
 
-								{mediaRating !== null &&
-									mediaRating !== undefined && (
-										<span className="flex items-center gap-1 rounded-full bg-black/75 px-2 py-0.5 text-xs text-white">
-											<Star className="h-3 w-3 fill-accent text-accent" />
-											{mediaRating.toFixed(1)}
-										</span>
-									)}
+								{!(
+									isAdded &&
+									mediaType === "tv" &&
+									tvEpisodeLabel
+								) && ratingBadge}
 							</div>
 
 							{/* TV PROGRESS */}
@@ -584,12 +603,16 @@ export default function MediaCard({
 										</>
 									)}
 
-									{tvEpisodeLabel && (
-										<div className="flex w-fit items-center gap-1 rounded-md bg-accent px-2 py-1 text-xs font-semibold text-white">
-											<PlayCircle className="h-3.5 w-3.5" />
-											<span>{tvEpisodeLabel}</span>
-										</div>
-									)}
+									<div className="flex items-center gap-2">
+										{tvEpisodeLabel && (
+											<div className="flex w-fit items-center gap-1 rounded-md bg-accent px-2 py-1 text-xs font-semibold text-white">
+												<PlayCircle className="h-3.5 w-3.5" />
+												<span>{tvEpisodeLabel}</span>
+											</div>
+										)}
+
+										{tvEpisodeLabel && ratingBadge}
+									</div>
 								</div>
 							)}
 						</div>

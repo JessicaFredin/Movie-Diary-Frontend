@@ -272,14 +272,15 @@ function getProgressPercentage(entry: DiaryEntry): number | null {
 
 	return Math.min(100, Math.max(0, Math.round(percentage)));
 }
-
 function getUserRating(entry: DiaryEntry): number | null {
-	if (typeof entry.rating === "number" && entry.rating > 0) {
-		return entry.rating;
+	const rawRating = entry.rating as unknown;
+
+	if (typeof rawRating === "number" && rawRating > 0) {
+		return rawRating;
 	}
 
-	if (typeof entry.rating === "string") {
-		const parsedRating = Number(entry.rating);
+	if (typeof rawRating === "string") {
+		const parsedRating = Number(rawRating);
 
 		if (!Number.isNaN(parsedRating) && parsedRating > 0) {
 			return parsedRating;
@@ -751,6 +752,7 @@ export default function MyDiaryPage() {
 				return false;
 			}
 
+
 			const userRating = getUserRating(item);
 
 			if (statusFilter === "rated" && userRating === null) {
@@ -758,6 +760,13 @@ export default function MyDiaryPage() {
 			}
 
 			if (statusFilter === "unrated" && userRating !== null) {
+				return false;
+			}
+
+			if (
+				minimumRating > 0 &&
+				(userRating === null || userRating < minimumRating)
+			) {
 				return false;
 			}
 

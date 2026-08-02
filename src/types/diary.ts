@@ -19,7 +19,8 @@ export type DiaryEntry = {
 	// Movie only
 	watched?: boolean;
 
-	rating?: number | null;
+	rating?: number | null; // your personal rating
+	tmdbRating?: number | null; // TMDB rating
 	review?: string | null;
 
 	updatedAt: string;
