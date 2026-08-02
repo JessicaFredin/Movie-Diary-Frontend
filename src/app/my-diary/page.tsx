@@ -1,217 +1,9 @@
-// "use client";
-
-// import { useCallback, useEffect, useMemo, useState } from "react";
-// import MediaToolbar from "@/components/diary/media-toolbar";
-// import MovieGrid from "@/components/diary/movie-grid";
-// import LoadMoreButton from "@/components/diary/load-more-button";
-// import { getDiary } from "@/utils/diary-storage";
-// import type { DiaryEntry } from "@/types/diary";
-
-// const GENRES = [
-// 	"Action",
-// 	"Comedy",
-// 	"Drama",
-// 	"Horror",
-// 	"Sci-Fi",
-// 	"Thriller",
-// 	"Romance",
-// 	"Animation",
-// 	"Documentary",
-// ];
-
-// const SERVICES = [
-// 	"Netflix",
-// 	"Prime Video",
-// 	"Disney+",
-// 	"Max",
-// 	"Apple TV+",
-// 	"Hulu",
-// ];
-
-// export default function MyDiaryPage() {
-// 	const [activeTab, setActiveTab] = useState<"all" | "movies" | "tv">("all");
-// 	const [sort, setSort] = useState("Popularity");
-// 	const [query, setQuery] = useState("");
-// 	const [items, setItems] = useState<DiaryEntry[]>([]);
-// 	const [view, setView] = useState<"grid" | "list">("grid");
-// 	const [filtersOpen, setFiltersOpen] = useState(false);
-// 	const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
-// 	const [selectedServices, setSelectedServices] = useState<string[]>([]);
-// 	const [loading, setLoading] = useState(true);
-
-// 	const loadDiary = useCallback(async () => {
-// 		setLoading(true);
-
-// 		try {
-// 			const diary = await getDiary();
-// 			setItems(diary);
-// 		} catch (error) {
-// 			console.error("Failed to load diary:", error);
-// 			setItems([]);
-// 		} finally {
-// 			setLoading(false);
-// 		}
-// 	}, []);
-
-// 	useEffect(() => {
-// 		loadDiary();
-// 	}, [loadDiary]);
-
-// 	const filteredItems = useMemo(() => {
-// 		return items.filter((item) => {
-// 			if (activeTab === "movies") return item.type === "movie";
-// 			if (activeTab === "tv") return item.type === "tv";
-// 			return true;
-// 		});
-// 	}, [items, activeTab]);
-
-// 	const searchedItems = useMemo(() => {
-// 		if (!query) return filteredItems;
-
-// 		return filteredItems.filter((item) =>
-// 			item.title.toLowerCase().includes(query.toLowerCase())
-// 		);
-// 	}, [filteredItems, query]);
-
-// 	function clearAllFilters() {
-// 		setSelectedGenres([]);
-// 		setSelectedServices([]);
-// 	}
-
-// 	const activeFilterCount = selectedGenres.length + selectedServices.length;
-
-// 	return (
-// 		<div className="relative px-6 md:px-24 py-10 overflow-hidden">
-// 			<img
-// 				src="/images/swoosh.svg"
-// 				alt=""
-// 				className="absolute inset-0 w-full h-full object-cover opacity-[0.25] pointer-events-none"
-// 			/>
-
-// 			<MediaToolbar
-// 				title="My Diary"
-// 				total={searchedItems.length}
-// 				activeTab={activeTab}
-// 				onTabChange={setActiveTab}
-// 				sort={sort}
-// 				onSortChange={setSort}
-// 				query={query}
-// 				onQueryChange={setQuery}
-// 				view={view}
-// 				onViewChange={setView}
-// 				onFilterClick={() => setFiltersOpen((prev) => !prev)}
-// 			/>
-
-// {filtersOpen && (
-// 	<div className="mb-8 p-6 rounded-2xl bg-[#1b1b1b] border border-border">
-// 		<div className="flex justify-between items-center mb-6">
-// 			<h3 className="text-lg font-semibold">Filters</h3>
-
-// 			{activeFilterCount > 0 && (
-// 				<button
-// 					type="button"
-// 					onClick={clearAllFilters}
-// 					className="text-accent text-sm hover:underline"
-// 				>
-// 					Clear all
-// 				</button>
-// 			)}
-// 		</div>
-
-// 		<div className="mb-6">
-// 			<h4 className="text-xs uppercase tracking-wide text-muted mb-3">
-// 				Genre
-// 			</h4>
-
-// 			<div className="flex flex-wrap gap-2">
-// 				{GENRES.map((genre) => {
-// 					const active = selectedGenres.includes(genre);
-
-// 					return (
-// 						<button
-// 							type="button"
-// 							key={genre}
-// 							onClick={() => {
-// 								setSelectedGenres((prev) =>
-// 									active
-// 										? prev.filter((g) => g !== genre)
-// 										: [...prev, genre]
-// 								);
-// 							}}
-// 							className={`px-3 py-1.5 rounded-full text-sm transition ${
-// 								active
-// 									? "bg-accent text-white"
-// 									: "bg-[#2a2a2a] text-muted hover:bg-[#333]"
-// 							}`}
-// 						>
-// 							{genre}
-// 						</button>
-// 					);
-// 				})}
-// 			</div>
-// 		</div>
-
-// 		<div>
-// 			<h4 className="text-xs uppercase tracking-wide text-muted mb-3">
-// 				Streaming Service
-// 			</h4>
-
-// 			<div className="flex flex-wrap gap-2">
-// 				{SERVICES.map((service) => {
-// 					const active = selectedServices.includes(service);
-
-// 					return (
-// 						<button
-// 							type="button"
-// 							key={service}
-// 							onClick={() => {
-// 								setSelectedServices((prev) =>
-// 									active
-// 										? prev.filter((s) => s !== service)
-// 										: [...prev, service]
-// 								);
-// 							}}
-// 							className={`px-3 py-1.5 rounded-full text-sm transition ${
-// 								active
-// 									? "bg-accent text-white"
-// 									: "bg-[#2a2a2a] text-muted hover:bg-[#333]"
-// 							}`}
-// 						>
-// 							{service}
-// 						</button>
-// 					);
-// 				})}
-// 			</div>
-// 		</div>
-// 	</div>
-// )}
-
-// 			{loading ? (
-// 				<p className="relative z-10 text-sm text-muted">
-// 					Loading diary...
-// 				</p>
-// 			) : searchedItems.length === 0 ? (
-// 				<p className="relative z-10 text-sm text-muted">
-// 					You haven’t added anything to your diary yet.
-// 				</p>
-// 			) : (
-// 				<MovieGrid items={searchedItems} onDiaryChanged={loadDiary} />
-// 			)}
-
-// 			<div className="flex justify-center mt-8 transition-all">
-// 				<LoadMoreButton
-// 					onClick={() => console.log("Load more clicked")}
-// 				/>
-// 			</div>
-// 		</div>
-// 	);
-// }
 "use client";
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CheckCircle2, Pencil, PlayCircle, Star, Trash2 } from "lucide-react";
 
 import MediaToolbar from "@/components/diary/media-toolbar";
@@ -235,7 +27,8 @@ type DiarySort =
 	| "A-Z"
 	| "Z-A"
 	| "Highest rated"
-	| "Lowest rated";
+	| "Lowest rated"
+	| "Oldest";
 
 type ProgressShape = {
 	currentSeason?: number;
@@ -249,7 +42,6 @@ type GenreSnapshot = {
 	name?: string;
 };
 
-
 type DiaryEntryWithGenres = DiaryEntry & {
 	genre?: string;
 	genreIds?: number[];
@@ -258,6 +50,25 @@ type DiaryEntryWithGenres = DiaryEntry & {
 	genre_names?: string[];
 	genres?: Array<GenreSnapshot | string>;
 };
+
+function getQueryGenres(value: string | null): string[] {
+	if (!value) return [];
+
+	return value
+		.split(",")
+		.map((genre) => genre.trim())
+		.filter(Boolean);
+}
+
+function getNumberParam(value: string | null): number {
+	if (!value) return 0;
+
+	const number = Number(value);
+
+	if (Number.isNaN(number)) return 0;
+
+	return number;
+}
 
 function getProgress(entry: DiaryEntry): ProgressShape | null {
 	if (!entry.progress) return null;
@@ -272,6 +83,7 @@ function getProgressPercentage(entry: DiaryEntry): number | null {
 
 	return Math.min(100, Math.max(0, Math.round(percentage)));
 }
+
 function getUserRating(entry: DiaryEntry): number | null {
 	const rawRating = entry.rating as unknown;
 
@@ -329,6 +141,15 @@ function formatDate(value?: string | null): string {
 		month: "short",
 		day: "numeric",
 	}).format(date);
+}
+
+function getTime(value?: string | null): number {
+	if (!value) return 0;
+
+	const date = new Date(value);
+	const time = date.getTime();
+
+	return Number.isNaN(time) ? 0 : time;
 }
 
 function isFinishedEntry(entry: DiaryEntry): boolean {
@@ -465,13 +286,11 @@ function sortDiaryItems(items: DiaryEntry[], sort: string): DiaryEntry[] {
 			return (getUserRating(a) ?? 0) - (getUserRating(b) ?? 0);
 		}
 
-		const aTime = new Date(a.updatedAt ?? "").getTime();
-		const bTime = new Date(b.updatedAt ?? "").getTime();
+		if (typedSort === "Oldest") {
+			return getTime(a.updatedAt) - getTime(b.updatedAt);
+		}
 
-		return (
-			(Number.isNaN(bTime) ? 0 : bTime) -
-			(Number.isNaN(aTime) ? 0 : aTime)
-		);
+		return getTime(b.updatedAt) - getTime(a.updatedAt);
 	});
 }
 
@@ -705,15 +524,45 @@ function DiaryList({
 }
 
 export default function MyDiaryPage() {
-	const [activeTab, setActiveTab] = useState<"all" | "movies" | "tv">("all");
-	const [sort, setSort] = useState("Recently added");
-	const [query, setQuery] = useState("");
+	const router = useRouter();
+	const pathname = usePathname();
+	const searchParams = useSearchParams();
+	const hasMounted = useRef(false);
+
+	const [activeTab, setActiveTab] = useState<"all" | "movies" | "tv">(() => {
+		const tab = searchParams.get("tab");
+
+		if (tab === "movies" || tab === "tv") return tab;
+
+		return "all";
+	});
+	const [sort, setSort] = useState(searchParams.get("sort") ?? "Popularity");
+	const [query, setQuery] = useState(searchParams.get("q") ?? "");
 	const [items, setItems] = useState<DiaryEntry[]>([]);
-	const [view, setView] = useState<"grid" | "list">("grid");
+	const [view, setView] = useState<"grid" | "list">(
+		searchParams.get("view") === "list" ? "list" : "grid",
+	);
 	const [filtersOpen, setFiltersOpen] = useState(false);
-	const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
-	const [statusFilter, setStatusFilter] = useState<DiaryStatusFilter>("all");
-	const [minimumRating, setMinimumRating] = useState(0);
+	const [selectedGenres, setSelectedGenres] = useState<string[]>(
+		getQueryGenres(searchParams.get("genres")),
+	);
+	const [statusFilter, setStatusFilter] = useState<DiaryStatusFilter>(() => {
+		const status = searchParams.get("status");
+
+		if (
+			status === "watching" ||
+			status === "finished" ||
+			status === "rated" ||
+			status === "unrated"
+		) {
+			return status;
+		}
+
+		return "all";
+	});
+	const [minimumRating, setMinimumRating] = useState(
+		getNumberParam(searchParams.get("minRating")),
+	);
 	const [loading, setLoading] = useState(true);
 	const [visibleCount, setVisibleCount] = useState(ITEMS_PER_LOAD);
 
@@ -739,6 +588,42 @@ export default function MyDiaryPage() {
 		setVisibleCount(ITEMS_PER_LOAD);
 	}, [activeTab, sort, query, selectedGenres, statusFilter, minimumRating]);
 
+	useEffect(() => {
+		if (!hasMounted.current) {
+			hasMounted.current = true;
+			return;
+		}
+
+		const params = new URLSearchParams();
+
+		if (query.trim()) params.set("q", query.trim());
+		if (activeTab !== "all") params.set("tab", activeTab);
+		if (view !== "grid") params.set("view", view);
+		if (sort !== "Popularity") params.set("sort", sort);
+		if (statusFilter !== "all") params.set("status", statusFilter);
+		if (selectedGenres.length > 0) {
+			params.set("genres", selectedGenres.join(","));
+		}
+		if (minimumRating > 0) {
+			params.set("minRating", String(minimumRating));
+		}
+
+		const queryString = params.toString();
+		const url = queryString ? `${pathname}?${queryString}` : pathname;
+
+		router.replace(url, { scroll: false });
+	}, [
+		query,
+		activeTab,
+		view,
+		sort,
+		statusFilter,
+		selectedGenres,
+		minimumRating,
+		pathname,
+		router,
+	]);
+
 	const filteredItems = useMemo(() => {
 		return items.filter((item) => {
 			if (activeTab === "movies" && item.type !== "movie") return false;
@@ -752,7 +637,6 @@ export default function MyDiaryPage() {
 				return false;
 			}
 
-
 			const userRating = getUserRating(item);
 
 			if (statusFilter === "rated" && userRating === null) {
@@ -760,13 +644,6 @@ export default function MyDiaryPage() {
 			}
 
 			if (statusFilter === "unrated" && userRating !== null) {
-				return false;
-			}
-
-			if (
-				minimumRating > 0 &&
-				(userRating === null || userRating < minimumRating)
-			) {
 				return false;
 			}
 
@@ -853,6 +730,7 @@ export default function MyDiaryPage() {
 				onQueryChange={setQuery}
 				view={view}
 				onViewChange={setView}
+				activeFilterCount={activeFilterCount}
 				onFilterClick={() => setFiltersOpen((prev) => !prev)}
 			/>
 

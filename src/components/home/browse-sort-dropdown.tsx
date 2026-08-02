@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
 
 export type BrowseSort =
-	| "top_rated"
 	| "popular"
+	| "top_rated"
 	| "newest"
 	| "oldest"
 	| "most_rated"
@@ -23,8 +23,8 @@ type Props = {
 };
 
 const options: SortOption[] = [
-	{ label: "Top rated", value: "top_rated" },
 	{ label: "Popularity", value: "popular" },
+	{ label: "Top rated", value: "top_rated" },
 	{ label: "Newest", value: "newest" },
 	{ label: "Oldest", value: "oldest" },
 	{ label: "Most ratings", value: "most_rated" },
@@ -34,7 +34,7 @@ const options: SortOption[] = [
 
 function getLabel(value: BrowseSort): string {
 	return (
-		options.find((option) => option.value === value)?.label ?? "Top rated"
+		options.find((option) => option.value === value)?.label ?? "Popularity"
 	);
 }
 

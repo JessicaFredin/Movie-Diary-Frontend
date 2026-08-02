@@ -17,6 +17,7 @@ type Props = {
 	view: "grid" | "list";
 	onViewChange: (val: "grid" | "list") => void;
 	onFilterClick?: () => void;
+	activeFilterCount?: number;
 };
 
 export default function MediaToolbar({
@@ -30,24 +31,24 @@ export default function MediaToolbar({
 	onQueryChange,
 	view,
 	onViewChange,
-	onFilterClick
+	onFilterClick,
+	activeFilterCount = 0,
 }: Props) {
 	return (
 		<div className="mb-8">
-			{/* Title */}
-			<h2 className="font-semibold text-2xl text-white mb-2">{title}</h2>
+			<h2 className="mb-2 text-2xl font-semibold text-white">{title}</h2>
 
-			{/* Tabs */}
-			<div className="flex gap-4 mb-3 overflow-x-auto no-scrollbar">
+			<div className="no-scrollbar mb-3 flex gap-4 overflow-x-auto">
 				{["all", "movies", "tv"].map((tab) => (
 					<button
+						type="button"
 						key={tab}
 						onClick={() =>
 							onTabChange(tab as "all" | "movies" | "tv")
 						}
-						className={`text-sm whitespace-nowrap transition ${
+						className={`whitespace-nowrap text-sm transition ${
 							activeTab === tab
-								? "text-accent font-semibold"
+								? "font-semibold text-accent"
 								: "text-muted hover:text-white"
 						}`}
 					>
@@ -60,24 +61,23 @@ export default function MediaToolbar({
 				))}
 			</div>
 
-			{/* Controls */}
 			<div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-				{/* Left section */}
 				<div className="flex flex-wrap items-center gap-4 text-sm text-muted">
 					<p className="whitespace-nowrap">{total} Titles</p>
 					<SortDropdown value={sort} onChange={onSortChange} />
 				</div>
 
-				{/* Right section */}
-				<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 w-full lg:w-auto">
-					{/* Search full width on mobile */}
-					<div className="w-full sm:w-auto flex-1">
+				<div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 lg:w-auto">
+					<div className="w-full flex-1 sm:w-auto">
 						<SearchBar query={query} onChange={onQueryChange} />
 					</div>
 
-					<div className="flex items-center gap-3 justify-between sm:justify-start">
+					<div className="flex items-center justify-between gap-3 sm:justify-start">
 						{onFilterClick && (
-							<FilterButton onClick={onFilterClick} />
+							<FilterButton
+								onClick={onFilterClick}
+								activeFilterCount={activeFilterCount}
+							/>
 						)}
 
 						<ViewToggle view={view} onChange={onViewChange} />

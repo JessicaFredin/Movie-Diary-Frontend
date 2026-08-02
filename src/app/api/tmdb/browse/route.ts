@@ -11,8 +11,6 @@ type BrowseSort =
 	| "title_asc"
 	| "title_desc";
 
-
-
 type TmdbItem = {
 	id: number;
 	media_type?: MediaType;
@@ -158,8 +156,6 @@ async function tmdbFetch(
 	return (await response.json()) as TmdbResponse;
 }
 
-
-
 function getMovieSort(sort: BrowseSort): string {
 	if (sort === "top_rated") return "vote_average.desc";
 	if (sort === "newest") return "primary_release_date.desc";
@@ -237,11 +233,30 @@ function dedupe(items: TmdbItem[]): TmdbItem[] {
 	return Array.from(map.values());
 }
 
-function getGenreIds(genreNames: string[], mediaType: MediaType): number[] {
+function normalizeGenre(value: string): string {
+	return value.trim().toLowerCase();
+}
+
+function getGenreIds(genreValues: string[], mediaType: MediaType): number[] {
 	const genreMap = mediaType === "movie" ? movieGenreMap : tvGenreMap;
 
-	return genreNames
-		.map((genre) => genreMap[genre])
+	const normalizedGenreMap = new Map<string, number>();
+
+	Object.entries(genreMap).forEach(([name, id]) => {
+		normalizedGenreMap.set(normalizeGenre(name), id);
+	});
+
+	return genreValues
+		.map((genre) => {
+			const trimmedGenre = genre.trim();
+			const numericGenre = Number(trimmedGenre);
+
+			if (!Number.isNaN(numericGenre)) {
+				return numericGenre;
+			}
+
+			return normalizedGenreMap.get(normalizeGenre(trimmedGenre));
+		})
 		.filter((id): id is number => typeof id === "number");
 }
 
@@ -249,7 +264,7 @@ function filterSearchResults(
 	items: TmdbItem[],
 	type: BrowseType,
 	minRating: number,
-	genreNames: string[],
+	genreValues: string[],
 ): TmdbItem[] {
 	return items.filter((item) => {
 		if (item.media_type !== "movie" && item.media_type !== "tv") {
@@ -268,16 +283,11 @@ function filterSearchResults(
 			return false;
 		}
 
-		if (genreNames.length === 0) {
+		if (genreValues.length === 0) {
 			return true;
 		}
 
-		const genreMap =
-			item.media_type === "movie" ? movieGenreMap : tvGenreMap;
-
-		const selectedIds = genreNames
-			.map((genre) => genreMap[genre])
-			.filter((id): id is number => typeof id === "number");
+		const selectedIds = getGenreIds(genreValues, item.media_type);
 
 		if (selectedIds.length === 0) {
 			return true;
@@ -289,14 +299,36 @@ function filterSearchResults(
 	});
 }
 
+function getBrowseType(value: string | null): BrowseType {
+	if (value === "movie" || value === "tv") return value;
+
+	return "all";
+}
+
+function getBrowseSort(value: string | null): BrowseSort {
+	if (
+		value === "popular" ||
+		value === "top_rated" ||
+		value === "newest" ||
+		value === "oldest" ||
+		value === "most_rated" ||
+		value === "title_asc" ||
+		value === "title_desc"
+	) {
+		return value;
+	}
+
+	return "popular";
+}
+
 export async function GET(request: NextRequest) {
 	try {
 		const searchParams = request.nextUrl.searchParams;
 
 		const page = Number(searchParams.get("page") ?? "1");
 		const query = searchParams.get("query")?.trim() ?? "";
-		const type = (searchParams.get("type") ?? "all") as BrowseType;
-		const sort = (searchParams.get("sort") ?? "top_rated") as BrowseSort;
+		const type = getBrowseType(searchParams.get("type"));
+		const sort = getBrowseSort(searchParams.get("sort"));
 		const minRating = Number(searchParams.get("minRating") ?? "0");
 
 		const genres =

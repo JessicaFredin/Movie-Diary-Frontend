@@ -1,232 +1,7 @@
-// "use client";
-
-// import useSWRInfinite from "swr/infinite";
-
-// import Row from "@/components/home/row";
-// import Filter from "@/components/home/filter";
-// import HeroCarousel from "@/components/home/hero-carousel";
-// import HeroCarouselSkeleton from "@/components/home/hero-carousel-skeleton";
-// import MediaCard from "@/components/media/media-card";
-
-// import { fetcher } from "@/utils/fetcher";
-// import type { Movie, TvShow, TMDBListResponse } from "@/types";
-
-// /* ---------------- KEYS ---------------- */
-
-// const getTrendingKey = (
-// 	pageIndex: number,
-// 	prev: TMDBListResponse<Movie | TvShow> | null,
-// ) => {
-// 	if (prev && pageIndex + 1 > prev.total_pages) return null;
-// 	return `/api/tmdb/trending?type=all&timeWindow=week&page=${pageIndex + 1}`;
-// };
-
-// const getMoviesKey = (
-// 	pageIndex: number,
-// 	prev: TMDBListResponse<Movie> | null,
-// ) => {
-// 	if (prev && pageIndex + 1 > prev.total_pages) return null;
-// 	return `/api/tmdb/popular-movies?page=${pageIndex + 1}`;
-// };
-
-// const getTvKey = (pageIndex: number, prev: TMDBListResponse<TvShow> | null) => {
-// 	if (prev && pageIndex + 1 > prev.total_pages) return null;
-// 	return `/api/tmdb/popular-tv-shows?page=${pageIndex + 1}`;
-// };
-
-// /* ---------------- HELPERS ---------------- */
-
-// function dedupeByMediaAndId<T extends { id: number; media_type?: string }>(
-// 	items: T[],
-// ) {
-// 	const map = new Map<string, T>();
-
-// 	for (const item of items) {
-// 		if (!item?.id) continue;
-
-// 		const type = item.media_type ?? ("title" in item ? "movie" : "tv");
-// 		const key = `${type}-${item.id}`;
-
-// 		map.set(key, item);
-// 	}
-
-// 	return Array.from(map.values());
-// }
-
-// function getSearchItemType(item: Movie | TvShow): "movie" | "tv" | null {
-// 	if (item.media_type === "movie") return "movie";
-// 	if (item.media_type === "tv") return "tv";
-
-// 	if ("title" in item) return "movie";
-// 	if ("name" in item) return "tv";
-
-// 	return null;
-// }
-
-// function getSearchItemTitle(item: Movie | TvShow) {
-// 	if ("title" in item) return item.title;
-// 	if ("name" in item) return item.name;
-
-// 	return "Untitled";
-// }
-
-// /* ---------------- PAGE ---------------- */
-
-// export default function HomePage() {
-// 	/* ---------- TRENDING ---------- */
-
-// 	const {
-// 		data: trendingPages,
-// 		size: trendingSize,
-// 		setSize: setTrendingSize,
-// 		isValidating: trendingValidating,
-// 		error: trendingError,
-// 	} = useSWRInfinite<TMDBListResponse<Movie | TvShow>>(
-// 		getTrendingKey,
-// 		fetcher,
-// 	);
-
-// 	const trendingItems = dedupeByMediaAndId(
-// 		trendingPages?.flatMap((p) => p.results) ?? [],
-// 	);
-
-// 	const showHeroSkeleton = !trendingPages && !trendingError;
-
-// 	/* ---------- MOVIES ---------- */
-
-// 	const {
-// 		data: moviePages,
-// 		size: moviesSize,
-// 		setSize: setMoviesSize,
-// 		isValidating: moviesValidating,
-// 	} = useSWRInfinite<TMDBListResponse<Movie>>(getMoviesKey, fetcher);
-
-// 	const popularMovies = dedupeByMediaAndId(
-// 		moviePages?.flatMap((p) => p.results) ?? [],
-// 	);
-
-// 	/* ---------- TV ---------- */
-
-// 	const {
-// 		data: tvPages,
-// 		size: tvSize,
-// 		setSize: setTvSize,
-// 		isValidating: tvValidating,
-// 	} = useSWRInfinite<TMDBListResponse<TvShow>>(getTvKey, fetcher);
-
-// 	const popularTvShows = dedupeByMediaAndId(
-// 		tvPages?.flatMap((p) => p.results) ?? [],
-// 	);
-
-// 	return (
-// 		<main>
-// 			{showHeroSkeleton ? (
-// 				<HeroCarouselSkeleton />
-// 			) : (
-// 				trendingItems.length > 0 && (
-// 					<HeroCarousel items={trendingItems.slice(0, 10)} />
-// 				)
-// 			)}
-
-// 			<div className="px-6 md:px-12">
-// 				<div className="mb-6 mt-12 flex items-center justify-end">
-// 					<Filter onFilterChange={() => {}} />
-// 				</div>
-
-// 				<Row
-// 					title="Trending This Week"
-// 					onScrollEnd={() =>
-// 						!trendingValidating && setTrendingSize(trendingSize + 1)
-// 					}
-// 					isLoadingMore={trendingValidating}
-// 				>
-// 					{trendingItems.map((item) => {
-// 						const mediaType = getSearchItemType(item);
-
-// 						if (!mediaType || !item.id || !item.poster_path) {
-// 							return null;
-// 						}
-
-// 						return (
-// 							<MediaCard
-// 								key={`${mediaType}-${item.id}`}
-// 								id={item.id}
-// 								type={mediaType}
-// 								title={getSearchItemTitle(item)}
-// 								posterPath={item.poster_path}
-// 								backdropPath={
-// 									item.backdrop_path ?? item.poster_path
-// 								}
-// 								rating={item.vote_average}
-// 								variant="row"
-// 							/>
-// 						);
-// 					})}
-// 				</Row>
-
-// 				<Row
-// 					title="Top Movies"
-// 					onScrollEnd={() =>
-// 						!moviesValidating && setMoviesSize(moviesSize + 1)
-// 					}
-// 					isLoadingMore={moviesValidating}
-// 				>
-// 					{popularMovies.map((movie) => {
-// 						if (!movie.id || !movie.poster_path) {
-// 							return null;
-// 						}
-
-// 						return (
-// 							<MediaCard
-// 								key={movie.id}
-// 								id={movie.id}
-// 								type="movie"
-// 								title={movie.title}
-// 								posterPath={movie.poster_path}
-// 								backdropPath={
-// 									movie.backdrop_path ?? movie.poster_path
-// 								}
-// 								rating={movie.vote_average}
-// 								variant="row"
-// 							/>
-// 						);
-// 					})}
-// 				</Row>
-
-// 				<Row
-// 					title="Top TV Shows"
-// 					onScrollEnd={() => !tvValidating && setTvSize(tvSize + 1)}
-// 					isLoadingMore={tvValidating}
-// 				>
-// 					{popularTvShows.map((tv) => {
-// 						if (!tv.id || !tv.poster_path) {
-// 							return null;
-// 						}
-
-// 						return (
-// 							<MediaCard
-// 								key={tv.id}
-// 								id={tv.id}
-// 								type="tv"
-// 								title={tv.name}
-// 								posterPath={tv.poster_path}
-// 								backdropPath={
-// 									tv.backdrop_path ?? tv.poster_path
-// 								}
-// 								rating={tv.vote_average}
-// 								variant="row"
-// 							/>
-// 						);
-// 					})}
-// 				</Row>
-// 			</div>
-// 		</main>
-// 	);
-// }
-
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 import useSWRInfinite from "swr/infinite";
 import { Filter as FilterIcon, SlidersHorizontal, Star, X } from "lucide-react";
 
@@ -240,6 +15,7 @@ import MediaCard from "@/components/media/media-card";
 import LoadMoreButton from "@/components/ui/load-more-button";
 
 import { fetcher } from "@/utils/fetcher";
+import { GENRE_MAP } from "@/constants/genres";
 import type { Movie, TvShow, TMDBListResponse } from "@/types";
 
 type MediaType = "movie" | "tv";
@@ -249,22 +25,65 @@ type BrowseItem = (Movie | TvShow) & {
 	media_type: MediaType;
 };
 
+type GenreOption = {
+	id: number;
+	name: string;
+};
+
 const ITEMS_PER_LOAD = 24;
 
-const genres = [
-	"Action",
-	"Adventure",
-	"Comedy",
-	"Drama",
-	"History",
-	"Mystery",
-	"Sci-Fi",
-	"Thriller",
-	"Horror",
-	"Romance",
-	"Animation",
-	"Crime",
-];
+const genres: GenreOption[] = Array.from(
+	new Map(
+		Object.entries(GENRE_MAP).map(([id, name]) => [
+			name,
+			{
+				id: Number(id),
+				name,
+			},
+		]),
+	).values(),
+).sort((a, b) => a.name.localeCompare(b.name));
+
+function getQueryGenreIds(value: string | null): number[] {
+	if (!value) return [];
+
+	return value
+		.split(",")
+		.map((genre) => Number(genre.trim()))
+		.filter((genre) => !Number.isNaN(genre));
+}
+
+function getNumberParam(value: string | null): number {
+	if (!value) return 0;
+
+	const number = Number(value);
+
+	if (Number.isNaN(number)) return 0;
+
+	return number;
+}
+
+function getBrowseTypeParam(value: string | null): BrowseType {
+	if (value === "movie" || value === "tv") return value;
+
+	return "all";
+}
+
+function getBrowseSortParam(value: string | null): BrowseSort {
+	if (
+		value === "popular" ||
+		value === "top_rated" ||
+		value === "newest" ||
+		value === "oldest" ||
+		value === "most_rated" ||
+		value === "title_asc" ||
+		value === "title_desc"
+	) {
+		return value;
+	}
+
+	return "popular";
+}
 
 const getTrendingKey = (
 	pageIndex: number,
@@ -324,19 +143,37 @@ function useDebouncedValue(value: string, delay: number): string {
 }
 
 export default function HomePage() {
-	const [search, setSearch] = useState("");
-	const [type, setType] = useState<BrowseType>("all");
-	const [sort, setSort] = useState<BrowseSort>("top_rated");
-	const [minimumRating, setMinimumRating] = useState(0);
-	const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
+	const router = useRouter();
+	const pathname = usePathname();
+	const searchParams = useSearchParams();
+	const hasMounted = useRef(false);
+
+	const [search, setSearch] = useState(searchParams.get("q") ?? "");
+	const [type, setType] = useState<BrowseType>(
+		getBrowseTypeParam(searchParams.get("type")),
+	);
+	const [sort, setSort] = useState<BrowseSort>(
+		getBrowseSortParam(searchParams.get("sort")),
+	);
+	const [minimumRating, setMinimumRating] = useState(
+		getNumberParam(searchParams.get("minRating")),
+	);
+	const [selectedGenreIds, setSelectedGenreIds] = useState<number[]>(
+		getQueryGenreIds(searchParams.get("genres")),
+	);
 	const [filtersOpen, setFiltersOpen] = useState(false);
 	const [visibleCount, setVisibleCount] = useState(ITEMS_PER_LOAD);
 
 	const debouncedSearch = useDebouncedValue(search, 250);
 
 	const selectedGenresQuery = useMemo(() => {
-		return selectedGenres.join(",");
-	}, [selectedGenres]);
+		return selectedGenreIds.join(",");
+	}, [selectedGenreIds]);
+
+	const activeFilterCount =
+		selectedGenreIds.length +
+		(type !== "all" ? 1 : 0) +
+		(minimumRating > 0 ? 1 : 0);
 
 	const { data: trendingPages, error: trendingError } = useSWRInfinite<
 		TMDBListResponse<Movie | TvShow>
@@ -406,21 +243,45 @@ export default function HomePage() {
 		setBrowseSize,
 	]);
 
-	function toggleGenre(genre: string): void {
-		setSelectedGenres((currentGenres) => {
-			if (currentGenres.includes(genre)) {
-				return currentGenres.filter((item) => item !== genre);
+	useEffect(() => {
+		if (!hasMounted.current) {
+			hasMounted.current = true;
+			return;
+		}
+
+		const params = new URLSearchParams();
+
+		if (search.trim()) params.set("q", search.trim());
+		if (type !== "all") params.set("type", type);
+		if (sort !== "popular") params.set("sort", sort);
+		if (minimumRating > 0) {
+			params.set("minRating", String(minimumRating));
+		}
+		if (selectedGenreIds.length > 0) {
+			params.set("genres", selectedGenreIds.join(","));
+		}
+
+		const queryString = params.toString();
+		const url = queryString ? `${pathname}?${queryString}` : pathname;
+
+		router.replace(url, { scroll: false });
+	}, [search, type, sort, minimumRating, selectedGenreIds, pathname, router]);
+
+	function toggleGenre(genreId: number): void {
+		setSelectedGenreIds((currentGenres) => {
+			if (currentGenres.includes(genreId)) {
+				return currentGenres.filter((item) => item !== genreId);
 			}
 
-			return [...currentGenres, genre];
+			return [...currentGenres, genreId];
 		});
 	}
 
 	function clearFilters(): void {
 		setType("all");
-		setSort("top_rated");
+		setSort("popular");
 		setMinimumRating(0);
-		setSelectedGenres([]);
+		setSelectedGenreIds([]);
 		setSearch("");
 	}
 
@@ -472,10 +333,16 @@ export default function HomePage() {
 						<button
 							type="button"
 							onClick={() => setFiltersOpen(true)}
-							className="ml-auto flex h-10 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-6 text-sm font-bold transition hover:bg-white/[0.1]"
+							className="relative ml-auto flex h-10 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-6 text-sm font-bold transition hover:bg-white/[0.1]"
 						>
 							<SlidersHorizontal className="h-4 w-4" />
-							Filters
+							<span>Filters</span>
+
+							{activeFilterCount > 0 && (
+								<span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1.5 text-[11px] font-black leading-none text-white">
+									{activeFilterCount}
+								</span>
+							)}
 						</button>
 					</div>
 				</div>
@@ -526,6 +393,7 @@ export default function HomePage() {
 											item.poster_path
 										}
 										rating={item.vote_average}
+										ratingKind="tmdb"
 										variant="default"
 									/>
 								);
@@ -586,7 +454,7 @@ export default function HomePage() {
 									</p>
 
 									<div className="flex items-center gap-1 text-sm font-bold">
-										<Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+										<Star className="h-4 w-4 fill-accent text-accent" />
 										{minimumRating.toFixed(1)}
 									</div>
 								</div>
@@ -650,14 +518,14 @@ export default function HomePage() {
 								<div className="flex flex-wrap gap-3">
 									{genres.map((genre) => {
 										const selected =
-											selectedGenres.includes(genre);
+											selectedGenreIds.includes(genre.id);
 
 										return (
 											<button
-												key={genre}
+												key={genre.id}
 												type="button"
 												onClick={() =>
-													toggleGenre(genre)
+													toggleGenre(genre.id)
 												}
 												className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
 													selected
@@ -665,7 +533,7 @@ export default function HomePage() {
 														: "border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]"
 												}`}
 											>
-												{genre}
+												{genre.name}
 											</button>
 										);
 									})}

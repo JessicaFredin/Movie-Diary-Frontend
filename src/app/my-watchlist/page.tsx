@@ -2,9 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { KeyboardEvent } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getWatchlist, removeFromWatchlist } from "@/utils/watchlist-storage";
 import { DiaryEntry } from "@/types/diary";
 import AddToDiaryModal from "@/components/diary/add-to-diary-modal";
@@ -20,15 +20,13 @@ const ITEMS_PER_LOAD = 24;
 const GENRES = Array.from(new Set(Object.values(GENRE_MAP))).sort();
 
 type WatchlistSort =
-	| "Latest"
+	| "Popularity"
 	| "Recently added"
-	| "Recently Added"
 	| "Oldest"
 	| "A-Z"
 	| "Z-A"
 	| "Highest rated"
-	| "Lowest rated"
-	| "Popularity";
+	| "Lowest rated";
 
 type GenreSnapshot = {
 	id?: number;
@@ -43,6 +41,25 @@ type WatchlistItemWithGenres = DiaryEntry & {
 	genre_names?: string[];
 	genres?: Array<GenreSnapshot | string>;
 };
+
+function getQueryGenres(value: string | null): string[] {
+	if (!value) return [];
+
+	return value
+		.split(",")
+		.map((genre) => genre.trim())
+		.filter(Boolean);
+}
+
+function getNumberParam(value: string | null): number {
+	if (!value) return 0;
+
+	const number = Number(value);
+
+	if (Number.isNaN(number)) return 0;
+
+	return number;
+}
 
 function getImageUrl(path?: string | null): string {
 	if (!path) return "/logo.png";
@@ -185,11 +202,11 @@ function sortWatchlistItems(items: DiaryEntry[], sort: string): DiaryEntry[] {
 		}
 
 		if (typedSort === "Highest rated") {
-			return (b.rating ?? 0) - (a.rating ?? 0);
+			return (getTmdbRating(b) ?? 0) - (getTmdbRating(a) ?? 0);
 		}
 
 		if (typedSort === "Lowest rated") {
-			return (a.rating ?? 0) - (b.rating ?? 0);
+			return (getTmdbRating(a) ?? 0) - (getTmdbRating(b) ?? 0);
 		}
 
 		if (typedSort === "Oldest") {
@@ -216,6 +233,7 @@ function WatchlistListItem({
 
 	const href = getHref(item);
 	const posterUrl = getImageUrl(item.poster);
+	const tmdbRating = getTmdbRating(item);
 
 	function openDetails(): void {
 		router.push(href);
@@ -298,10 +316,10 @@ function WatchlistListItem({
 								className="flex shrink-0 flex-col items-center gap-1.5 sm:gap-2"
 								onClick={(event) => event.stopPropagation()}
 							>
-								{typeof item.rating === "number" && (
+								{tmdbRating !== null && (
 									<div className="hidden shrink-0 items-center gap-1 rounded-full bg-black/40 px-3 py-1.5 text-sm font-bold text-white sm:flex">
 										<Star className="h-4 w-4 fill-accent text-accent" />
-										{item.rating.toFixed(1)}
+										{tmdbRating.toFixed(1)}
 									</div>
 								)}
 
@@ -376,16 +394,33 @@ function WatchlistList({
 }
 
 export default function WatchlistPage() {
+	const router = useRouter();
+	const pathname = usePathname();
+	const searchParams = useSearchParams();
+	const hasMounted = useRef(false);
+
 	const [items, setItems] = useState<DiaryEntry[]>([]);
-	const [query, setQuery] = useState("");
-	const [view, setView] = useState<"grid" | "list">("grid");
-	const [activeTab, setActiveTab] = useState<"all" | "movies" | "tv">("all");
-	const [sort, setSort] = useState("Recently added");
+	const [query, setQuery] = useState(searchParams.get("q") ?? "");
+	const [view, setView] = useState<"grid" | "list">(
+		searchParams.get("view") === "list" ? "list" : "grid",
+	);
+	const [activeTab, setActiveTab] = useState<"all" | "movies" | "tv">(() => {
+		const tab = searchParams.get("tab");
+
+		if (tab === "movies" || tab === "tv") return tab;
+
+		return "all";
+	});
+	const [sort, setSort] = useState(searchParams.get("sort") ?? "Popularity");
 	const [filtersOpen, setFiltersOpen] = useState(false);
 	const [selected, setSelected] = useState<DiaryEntry | null>(null);
 
-	const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
-	const [minimumRating, setMinimumRating] = useState(0);
+	const [selectedGenres, setSelectedGenres] = useState<string[]>(
+		getQueryGenres(searchParams.get("genres")),
+	);
+	const [minimumRating, setMinimumRating] = useState(
+		getNumberParam(searchParams.get("minRating")),
+	);
 	const [visibleCount, setVisibleCount] = useState(ITEMS_PER_LOAD);
 
 	useEffect(() => {
@@ -397,15 +432,49 @@ export default function WatchlistPage() {
 		void loadWatchlist();
 	}, []);
 
+	useEffect(() => {
+		setVisibleCount(ITEMS_PER_LOAD);
+	}, [activeTab, query, selectedGenres, minimumRating, sort]);
+
+	useEffect(() => {
+		if (!hasMounted.current) {
+			hasMounted.current = true;
+			return;
+		}
+
+		const params = new URLSearchParams();
+
+		if (query.trim()) params.set("q", query.trim());
+		if (activeTab !== "all") params.set("tab", activeTab);
+		if (view !== "grid") params.set("view", view);
+		if (sort !== "Popularity") params.set("sort", sort);
+		if (selectedGenres.length > 0) {
+			params.set("genres", selectedGenres.join(","));
+		}
+		if (minimumRating > 0) {
+			params.set("minRating", String(minimumRating));
+		}
+
+		const queryString = params.toString();
+		const url = queryString ? `${pathname}?${queryString}` : pathname;
+
+		router.replace(url, { scroll: false });
+	}, [
+		query,
+		activeTab,
+		view,
+		sort,
+		selectedGenres,
+		minimumRating,
+		pathname,
+		router,
+	]);
+
 	async function handleRemove(entry: DiaryEntry) {
 		await removeFromWatchlist(entry.id, entry.type);
 		const list = await getWatchlist();
 		setItems(list);
 	}
-
-	useEffect(() => {
-		setVisibleCount(ITEMS_PER_LOAD);
-	}, [activeTab, query, selectedGenres, minimumRating, sort]);
 
 	const filteredItems = useMemo(() => {
 		const cleanQuery = query.trim().toLowerCase();
@@ -418,14 +487,14 @@ export default function WatchlistPage() {
 				return false;
 			}
 
-		const tmdbRating = getTmdbRating(item);
+			const tmdbRating = getTmdbRating(item);
 
-		if (
-			minimumRating > 0 &&
-			(tmdbRating === null || tmdbRating < minimumRating)
-		) {
-			return false;
-		}
+			if (
+				minimumRating > 0 &&
+				(tmdbRating === null || tmdbRating < minimumRating)
+			) {
+				return false;
+			}
 
 			if (!itemHasGenre(item, selectedGenres)) {
 				return false;
@@ -482,6 +551,7 @@ export default function WatchlistPage() {
 				onQueryChange={setQuery}
 				view={view}
 				onViewChange={setView}
+				activeFilterCount={activeFilterCount}
 				onFilterClick={() => setFiltersOpen(!filtersOpen)}
 			/>
 
