@@ -1,89 +1,85 @@
-const lastUpdated = "August 3, 2026";
+import TmdbAttribution from "@/components/legal/tmdb-attribution";
 
 const sections = [
 	{
 		title: "1. Who we are",
-		text: "Movie Diary is a movie and TV tracking service operated by JamDevCo. In this Privacy Policy, “Movie Diary”, “we”, “us” and “our” refer to the operator of the service. For privacy questions, you can contact us at contact@jamdevco.com.",
+		text: "Movie Diary is a movie and TV diary app. For privacy questions, account requests or data requests, contact us at contact@jamdevco.com.",
 	},
 	{
-		title: "2. Information we collect",
-		text: "We may collect account information such as your email address, display name, username, avatar, profile information, login provider, account settings and account creation date. We may also collect the content and activity you choose to save in Movie Diary, such as diary entries, watchlist items, ratings, reviews, notes, episode notes, moods, watched-with information, comments, friends, achievements and profile activity.",
+		title: "2. Beta notice",
+		text: "Movie Diary is currently in development and may be offered as a beta service. During beta, features may change and some technical issues may occur. We still aim to handle personal data carefully and transparently.",
 	},
 	{
-		title: "3. Technical information",
-		text: "When you use Movie Diary, we may process technical information needed to operate, secure and improve the service. This may include device information, browser type, IP address, approximate location based on IP, timestamps, authentication logs, error logs, security logs and usage events.",
+		title: "3. Information we collect",
+		text: "We may collect account information such as your email address, user ID, display name, username, avatar, profile text, account settings and authentication information.",
 	},
 	{
-		title: "4. Information you make public",
-		text: "Some parts of Movie Diary may be visible to other users depending on the feature and your settings. This may include your display name, username, avatar, public profile, comments, ratings, diary activity, achievements, friend activity or other content you choose to share publicly.",
+		title: "4. Content you create",
+		text: "We may store content you create in Movie Diary, including diary entries, watchlist items, ratings, reviews, notes, episode notes, moods, watched-with information, comments, friendships, reports, achievements and profile activity.",
 	},
 	{
-		title: "5. Private diary, watchlist and notes",
-		text: "Some features may be private to your account, such as personal notes, diary entries, watchlist items or episode notes. We still process this information so the app can save it, display it to you, sync it across devices, back it up and keep the service working.",
+		title: "5. Technical information",
+		text: "We may process technical information needed to operate and secure the service, such as timestamps, device/browser information, error logs, security logs, IP-related information, session data and similar technical data.",
 	},
 	{
 		title: "6. How we use your information",
-		text: "We use your information to create and manage your account, keep you logged in, save your diary and watchlist, display ratings and notes, enable comments and social features, unlock achievements, personalize your experience, respond to support requests, prevent abuse, improve the service and keep Movie Diary secure.",
+		text: "We use your information to create and manage your account, save your diary and watchlist, show ratings and notes, provide social features, display profiles, enable comments, prevent abuse, improve the app, troubleshoot problems and keep the service secure.",
 	},
 	{
-		title: "7. Legal basis for processing",
-		text: "Where GDPR or similar laws apply, we process personal data based on one or more legal bases: performance of a contract when we provide the service to you, legitimate interests when we secure and improve Movie Diary, consent where required for optional features or cookies, and legal obligations where we must keep or disclose information to comply with the law.",
+		title: "7. Legal bases",
+		text: "Where GDPR applies, we process personal data based on one or more legal bases, such as providing the service you request, our legitimate interests in operating and securing Movie Diary, compliance with legal obligations, and consent where required.",
 	},
 	{
-		title: "8. Comments, reports and moderation",
-		text: "Comments you post may be visible to other users. If content is reported, we may store and review the report, the reported content, related account information and moderation actions. We use this information to enforce rules, protect users, prevent abuse and improve community safety.",
+		title: "8. Public profile and activity",
+		text: "Some information may be visible to other users depending on your privacy settings and app features. This may include your display name, username, avatar, comments, ratings, diary activity, watchlist activity, achievements, friendships or profile information.",
 	},
 	{
-		title: "9. Cookies and similar technologies",
-		text: "Movie Diary may use cookies, local storage and similar technologies to keep you logged in, remember preferences, protect your session, understand basic usage and improve the experience. If we add non-essential analytics, advertising or tracking cookies, we will ask for consent where required.",
+		title: "9. Comments, notes and user content",
+		text: "Content you submit may be stored and displayed inside the app. You should not submit private information you do not want stored or shown. Inappropriate or copyright-protected material that you do not have permission to use is not allowed.",
 	},
 	{
-		title: "10. Third-party services",
-		text: "Movie Diary may use third-party services for authentication, hosting, database storage, file storage, analytics, error monitoring, email, security and movie or TV data. These providers may process personal data only as needed to provide their services to us or according to their own policies where they act independently.",
+		title: "10. Reports and moderation",
+		text: "If users report content or accounts, we may review the reported material and related account information to enforce rules, protect users, prevent abuse and improve safety.",
 	},
 	{
-		title: "11. Movie and TV data providers",
-		text: "Movie Diary may display movie and TV metadata, posters, images, ratings and other information from third-party providers such as TMDB. Your interaction with Movie Diary may involve storing references to this data, such as movie IDs, show IDs, titles, poster paths and ratings.",
+		title: "11. Third-party services",
+		text: "Movie Diary may use third-party services for hosting, authentication, databases, storage, analytics, error monitoring and movie/TV data. These services may process data according to their own terms and privacy policies.",
 	},
 	{
-		title: "12. Sharing your information",
-		text: "We do not sell your personal data. We may share personal data with service providers that help us operate Movie Diary, when required by law, to protect our rights or users, during a business transfer, or when you choose to make information public through the app.",
+		title: "12. Movie and TV data",
+		text: "Movie Diary uses third-party movie and TV data, including data from TMDB. Movie Diary does not own the external movie, TV, poster, image, rating or metadata shown through the service.",
 	},
 	{
-		title: "13. International transfers",
-		text: "Some service providers may process data outside your country, including outside the EU/EEA. Where required, we rely on appropriate safeguards such as standard contractual clauses, adequacy decisions or other lawful transfer mechanisms.",
+		title: "13. Cookies and local storage",
+		text: "Movie Diary may use cookies, local storage or similar technologies to keep you logged in, remember preferences, improve user experience, support security and operate core features.",
 	},
 	{
 		title: "14. Data retention",
-		text: "We keep personal data for as long as needed to provide Movie Diary, maintain your account, comply with legal obligations, resolve disputes, prevent abuse and protect the service. If you delete your account, we will delete or anonymise personal account data where reasonably possible, subject to backups, logs, security needs and legal obligations.",
+		text: "We keep personal data for as long as your account exists or as long as needed to provide the service, comply with legal obligations, resolve disputes, keep security records, prevent abuse or maintain backups for a limited period.",
 	},
 	{
 		title: "15. Account deletion",
-		text: "You may request or perform account deletion where available. Account deletion may remove or anonymise your profile, diary entries, watchlist, ratings, notes, comments and other account-related data. Some information may remain temporarily in backups or logs, and some public content may remain if it has been anonymised or is needed for legitimate reasons.",
+		text: "You may request deletion of your account by contacting contact@jamdevco.com or using an account deletion feature if available. Deletion may remove or anonymize your profile, diary entries, ratings, watchlist, notes, comments and related data, subject to backups, technical limits and legal obligations.",
 	},
 	{
-		title: "16. Security",
-		text: "We use reasonable technical and organisational measures to protect personal data against unauthorised access, loss, misuse or alteration. However, no online service can be guaranteed to be completely secure, so you should use a strong login method and keep your account details safe.",
+		title: "16. Your rights",
+		text: "Depending on where you live, especially if you are in the EU/EEA, you may have rights to access, correct, delete, restrict, object to or receive a copy of your personal data. You may also have the right to withdraw consent where processing is based on consent.",
 	},
 	{
-		title: "17. Children",
-		text: "Movie Diary is not intended for children who are too young to legally use online services without parental consent. If we learn that we have collected personal data from a child without required consent, we will take reasonable steps to delete it.",
+		title: "17. Security",
+		text: "We use reasonable technical and organizational measures to protect personal data. However, no online service can be guaranteed to be completely secure.",
 	},
 	{
-		title: "18. Your privacy rights",
-		text: "Depending on where you live, you may have the right to request access to your personal data, correction of inaccurate data, deletion, restriction, portability, objection to certain processing, and withdrawal of consent where processing is based on consent.",
+		title: "18. Children",
+		text: "Movie Diary is not intended for children who are too young to consent to digital services under applicable law. If you believe a child has provided personal data without proper permission, contact us.",
 	},
 	{
-		title: "19. How to exercise your rights",
-		text: "To exercise privacy rights, contact us at contact@jamdevco.com. We may need to verify your identity before responding. We will respond within the time required by applicable law. If you are in the EU/EEA, you may also have the right to complain to your local data protection authority.",
+		title: "19. International transfers",
+		text: "Some service providers may process data in countries outside your country of residence. Where required, we aim to rely on appropriate safeguards for such transfers.",
 	},
 	{
-		title: "20. Automated decision-making",
-		text: "Movie Diary may use automated logic for features such as sorting, recommendations, achievements, filtering, spam prevention or security checks. We do not currently use automated decision-making that produces legal or similarly significant effects about you.",
-	},
-	{
-		title: "21. Changes to this Privacy Policy",
-		text: "We may update this Privacy Policy when Movie Diary changes, when we add new features, when providers change, or when legal requirements change. The updated date at the top shows when the latest version took effect. If changes are significant, we may provide additional notice where appropriate.",
+		title: "20. Changes to this Privacy Policy",
+		text: "We may update this Privacy Policy when Movie Diary changes, when legal requirements change or when we need to clarify how data is handled. The latest version will be posted on this page.",
 	},
 ];
 
@@ -100,35 +96,24 @@ export default function PrivacyPage() {
 				</h1>
 
 				<p className="mt-5 text-sm text-white/45">
-					Last updated: {lastUpdated}
+					Last updated: August 3, 2026
 				</p>
 
-				<div className="mt-8 rounded-3xl border border-accent/30 bg-accent/10 p-6">
-					<h2 className="text-xl font-black">Quick summary</h2>
+				<div className="mt-6 rounded-3xl border border-accent/30 bg-accent/10 p-6">
+					<h2 className="text-xl font-black">Beta privacy notice</h2>
 
 					<p className="mt-3 leading-8 text-white/70">
-						Movie Diary stores the information needed to run your
-						account and save your movie and TV activity, such as
-						your profile, diary, watchlist, ratings, comments and
-						notes. We do not sell your personal data. You can
-						contact us to ask privacy questions or request access,
-						correction or deletion.
+						Movie Diary is currently in development. This policy is
+						written for a beta launch and should be reviewed before
+						a larger public or commercial release.
 					</p>
 				</div>
-
-				<p className="mt-6 max-w-3xl leading-8 text-white/60">
-					This Privacy Policy explains what information Movie Diary
-					collects, why we use it, how long we keep it, who may
-					process it, and what rights you may have. It is written as a
-					strong template, but it should be reviewed by a qualified
-					legal professional before public launch.
-				</p>
 
 				<div className="mt-10 space-y-5">
 					{sections.map((section) => (
 						<div
 							key={section.title}
-							className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 transition hover:border-accent/40 hover:bg-white/[0.045]"
+							className="rounded-3xl border border-white/10 bg-white/[0.03] p-6"
 						>
 							<h2 className="text-xl font-black">
 								{section.title}
@@ -141,7 +126,11 @@ export default function PrivacyPage() {
 					))}
 				</div>
 
-				<div className="mt-10 rounded-3xl border border-white/10 bg-white/[0.03] p-6">
+				<div className="mt-10">
+					<TmdbAttribution />
+				</div>
+
+				<div className="mt-10 rounded-3xl border border-accent/30 bg-accent/10 p-6">
 					<h2 className="text-xl font-black">Privacy contact</h2>
 
 					<p className="mt-3 leading-8 text-white/70">
@@ -149,7 +138,7 @@ export default function PrivacyPage() {
 						requests, contact{" "}
 						<a
 							href="mailto:contact@jamdevco.com"
-							className="font-bold text-accent transition hover:text-accent-hover"
+							className="font-bold text-accent hover:text-accent-hover"
 						>
 							contact@jamdevco.com
 						</a>

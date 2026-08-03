@@ -31,6 +31,8 @@ type ReportReason =
 	| "hate"
 	| "spoiler"
 	| "offensive"
+	| "copyright"
+	| "privacy"
 	| "other";
 
 type ToastType = "success" | "error";
@@ -103,6 +105,7 @@ type ReportSubmitResult = {
 	message?: string;
 };
 
+
 const REPORT_REASONS: ReportReasonOption[] = [
 	{
 		value: "spam",
@@ -127,7 +130,17 @@ const REPORT_REASONS: ReportReasonOption[] = [
 	{
 		value: "offensive",
 		label: "Offensive content",
-		description: "Sexual, violent, or inappropriate content.",
+		description: "Sexual, violent, abusive, or inappropriate content.",
+	},
+	{
+		value: "copyright",
+		label: "Copyright",
+		description: "Content that may use protected material without permission.",
+	},
+	{
+		value: "privacy",
+		label: "Privacy issue",
+		description: "Personal information or private content shared without permission.",
 	},
 	{
 		value: "other",
@@ -1379,29 +1392,32 @@ export default function MediaComments({
 
 		setReporting(true);
 
-		const { error } = await supabase.from("media_comment_reports").insert({
-			comment_id: reportTarget.id,
-			reporter_id: currentUserId,
-			reason,
-			details: details.trim() || null,
-			status: "pending",
+		const currentUrl =
+			typeof window !== "undefined" ? window.location.href : null;
+
+		const descriptionParts = [
+			`Reason: ${reason}`,
+			details.trim() ? `Details: ${details.trim()}` : null,
+			`Comment text: ${reportTarget.text}`,
+		].filter(Boolean);
+
+		const { error } = await supabase.from("content_reports").insert({
+			reporter_user_id: currentUserId,
+			reported_user_id: reportTarget.userId,
+			report_type: reason,
+			content_type: "Comment",
+			content_id: reportTarget.id,
+			content_url: currentUrl,
+			media_id: String(mediaId),
+			media_type: mediaType,
+			reported_user: reportTarget.author,
+			description: descriptionParts.join("\n\n"),
+			status: "open",
 		});
 
 		setReporting(false);
 
 		if (error) {
-			if (error.code === "23505") {
-				setReportTarget(null);
-				showToast(
-					"success",
-					"You have reported this comment. It will be reviewed.",
-				);
-
-				return {
-					success: true,
-				};
-			}
-
 			return {
 				success: false,
 				message: error.message,

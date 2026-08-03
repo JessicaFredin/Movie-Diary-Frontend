@@ -21,6 +21,7 @@ const supportLinks = [
 	{ label: "Terms & Conditions", href: "/terms" },
 	{ label: "How to use", href: "/how-to-use" },
 	{ label: "Contact us", href: "/contact" },
+	
 ];
 
 type FooterLink = {
@@ -153,6 +154,20 @@ export default function Footer() {
 								className="transition hover:text-white"
 							>
 								Terms of Service
+							</Link>
+
+							<Link
+								href="/beta"
+								className="transition hover:text-white"
+							>
+								Beta
+							</Link>
+
+							<Link
+								href="/report-content"
+								className="transition hover:text-white"
+							>
+								Report content
 							</Link>
 						</div>
 					</div>

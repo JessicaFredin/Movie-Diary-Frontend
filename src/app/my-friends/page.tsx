@@ -5,25 +5,26 @@ import type { ReactNode } from "react";
 import {
 	ArrowUpRight,
 	Ban,
-	Calendar,
+	Check,
 	Eye,
 	Film,
 	Heart,
+	Inbox,
 	List,
 	Lock,
-	MessageCircle,
 	MoreHorizontal,
 	Search,
 	Send,
 	Share2,
 	Sparkles,
+	ThumbsUp,
+	Trash2,
 	Tv,
 	UserMinus,
 	UserPlus,
 	Users,
 	VolumeX,
 	X,
-	Trash2,
 } from "lucide-react";
 
 type Friend = {
@@ -47,9 +48,6 @@ type Friend = {
 	recentActivity: string;
 
 	since: string;
-	lastMessage?: string;
-	lastMessageTime?: string;
-	unreadCount?: number;
 };
 
 type DiaryItem = {
@@ -71,12 +69,30 @@ type Activity = {
 	time: string;
 };
 
-type ChatMessage = {
+type Recommendation = {
 	id: number;
-	from: "me" | "them";
-	text: string;
+	fromFriendId: number;
+	fromName: string;
+	title: string;
+	type: "movie" | "tv";
+	message: string;
 	time: string;
-	date?: string;
+	status: "new" | "accepted" | "dismissed";
+};
+
+type TmdbSuggestion = {
+	id: number;
+	media_type?: "movie" | "tv";
+	title?: string;
+	name?: string;
+	poster_path?: string | null;
+	release_date?: string;
+	first_air_date?: string;
+	vote_average?: number | null;
+};
+
+type TmdbSearchResponse = {
+	results?: TmdbSuggestion[];
 };
 
 const AVATAR_COLORS = [
@@ -106,9 +122,6 @@ const INITIAL_FRIENDS: Friend[] = [
 		topGenres: ["Sci-Fi", "Drama", "Thriller"],
 		recentActivity: "Watched Dune: Part Two",
 		since: "Jan 2023",
-		lastMessage: "You HAVE to watch this 😭",
-		lastMessageTime: "18:42",
-		unreadCount: 2,
 	},
 	{
 		id: 2,
@@ -128,8 +141,6 @@ const INITIAL_FRIENDS: Friend[] = [
 		topGenres: ["Thriller", "Indie", "Mystery"],
 		recentActivity: "Rated The Holdovers",
 		since: "Mar 2022",
-		lastMessage: "That ending was wild",
-		lastMessageTime: "Yesterday",
 	},
 	{
 		id: 3,
@@ -148,9 +159,6 @@ const INITIAL_FRIENDS: Friend[] = [
 		topGenres: ["Action", "Comedy", "Sci-Fi"],
 		recentActivity: "Added The Zone of Interest to watchlist",
 		since: "Sep 2023",
-		lastMessage: "Any recs?",
-		lastMessageTime: "21:10",
-		unreadCount: 1,
 	},
 	{
 		id: 4,
@@ -170,8 +178,6 @@ const INITIAL_FRIENDS: Friend[] = [
 		topGenres: ["Drama", "Romance", "Indie"],
 		recentActivity: "Reviewed Poor Things",
 		since: "Nov 2021",
-		lastMessage: "Starting episode 1 now",
-		lastMessageTime: "19:01",
 	},
 	{
 		id: 5,
@@ -190,8 +196,6 @@ const INITIAL_FRIENDS: Friend[] = [
 		topGenres: ["Horror", "Crime", "Thriller"],
 		recentActivity: "Watched Longlegs",
 		since: "Jun 2023",
-		lastMessage: "This one was actually scary",
-		lastMessageTime: "Today",
 	},
 	{
 		id: 6,
@@ -210,8 +214,6 @@ const INITIAL_FRIENDS: Friend[] = [
 		topGenres: ["Fantasy", "Drama", "Animation"],
 		recentActivity: "Favorited an episode",
 		since: "Feb 2022",
-		lastMessage: "Comfort show night?",
-		lastMessageTime: "16:28",
 	},
 ];
 
@@ -247,6 +249,39 @@ const ACTIVITY_FEED: Activity[] = [
 		action: "rated",
 		title: "Spirited Away",
 		time: "2d ago",
+	},
+];
+
+const INITIAL_RECOMMENDATIONS: Recommendation[] = [
+	{
+		id: 1,
+		fromFriendId: 1,
+		fromName: "Alex",
+		title: "Dune: Part Two",
+		type: "movie",
+		message: "You would love this one. The visuals are insane.",
+		time: "2h ago",
+		status: "new",
+	},
+	{
+		id: 2,
+		fromFriendId: 6,
+		fromName: "Luna",
+		title: "Spirited Away",
+		type: "movie",
+		message: "Comfort movie recommendation for tonight.",
+		time: "Yesterday",
+		status: "new",
+	},
+	{
+		id: 3,
+		fromFriendId: 5,
+		fromName: "Tom",
+		title: "Longlegs",
+		type: "movie",
+		message: "Only watch this if you want something creepy.",
+		time: "2d ago",
+		status: "accepted",
 	},
 ];
 
@@ -307,62 +342,6 @@ const DIARY_ITEMS: Record<number, DiaryItem[]> = {
 	],
 };
 
-const CHAT_HISTORY: Record<number, ChatMessage[]> = {
-	1: [
-		{
-			id: 1,
-			from: "them",
-			text: "Have you seen Dune Part Two?",
-			time: "17:40",
-			date: "Today",
-		},
-		{ id: 2, from: "me", text: "Not yet 👀", time: "17:45" },
-		{
-			id: 3,
-			from: "them",
-			text: "You HAVE to watch this 😭",
-			time: "18:42",
-		},
-	],
-	2: [
-		{
-			id: 1,
-			from: "them",
-			text: "That ending was wild",
-			time: "20:55",
-			date: "Yesterday",
-		},
-		{ id: 2, from: "me", text: "I know right??", time: "21:02" },
-	],
-	3: [
-		{
-			id: 1,
-			from: "them",
-			text: "Any recs?",
-			time: "21:10",
-			date: "Today",
-		},
-	],
-	5: [
-		{
-			id: 1,
-			from: "them",
-			text: "This one was actually scary",
-			time: "13:11",
-			date: "Today",
-		},
-	],
-	6: [
-		{
-			id: 1,
-			from: "them",
-			text: "Comfort show night?",
-			time: "16:28",
-			date: "Today",
-		},
-	],
-};
-
 function getInitials(name: string): string {
 	return name
 		.split(" ")
@@ -382,30 +361,61 @@ function getOnlineLabel(friend: Friend): string {
 }
 
 function getTabCount(tab: string, friends: Friend[]): number {
-	if (tab === "Friends")
+	if (tab === "Friends") {
 		return friends.filter((friend) => friend.isFriend).length;
-	if (tab === "Discover")
+	}
+
+	if (tab === "Discover") {
 		return friends.filter((friend) => !friend.isFriend).length;
-	if (tab === "Online")
+	}
+
+	if (tab === "Online") {
 		return friends.filter((friend) => friend.isOnline).length;
+	}
+
 	return friends.length;
+}
+
+function getSuggestionTitle(item: TmdbSuggestion): string {
+	return item.title || item.name || "Untitled";
+}
+
+function getSuggestionType(item: TmdbSuggestion): "movie" | "tv" {
+	if (item.media_type === "tv") return "tv";
+	return "movie";
+}
+
+function getSuggestionYear(item: TmdbSuggestion): string {
+	const date = item.release_date || item.first_air_date;
+	if (!date) return "—";
+
+	const year = new Date(date).getFullYear();
+
+	return Number.isNaN(year) ? "—" : String(year);
+}
+
+function getPosterUrl(path?: string | null): string {
+	if (!path) return "/logo.png";
+	if (path.startsWith("http")) return path;
+
+	const cleanPath = path.startsWith("/") ? path : `/${path}`;
+
+	return `https://image.tmdb.org/t/p/w185${cleanPath}`;
 }
 
 export default function FriendsPage() {
 	const [friends, setFriends] = useState<Friend[]>(INITIAL_FRIENDS);
+	const [recommendations, setRecommendations] = useState<Recommendation[]>(
+		INITIAL_RECOMMENDATIONS,
+	);
 	const [activeTab, setActiveTab] = useState("All");
 	const [search, setSearch] = useState("");
 	const [openMenu, setOpenMenu] = useState<number | null>(null);
 	const [selectedCompare, setSelectedCompare] = useState<Friend | null>(null);
 	const [diaryFriend, setDiaryFriend] = useState<Friend | null>(null);
-	const [chatOpen, setChatOpen] = useState(false);
-	const [activeChat, setActiveChat] = useState<Friend | null>(null);
-	const [draftMessage, setDraftMessage] = useState("");
-	const [chatMessages, setChatMessages] =
-		useState<Record<number, ChatMessage[]>>(CHAT_HISTORY);
+	const [recommendFriend, setRecommendFriend] = useState<Friend | null>(null);
 
 	const menuRef = useRef<HTMLDivElement | null>(null);
-	const bottomRef = useRef<HTMLDivElement | null>(null);
 
 	useEffect(() => {
 		function handleClickOutside(event: MouseEvent): void {
@@ -423,10 +433,6 @@ export default function FriendsPage() {
 			document.removeEventListener("mousedown", handleClickOutside);
 		};
 	}, []);
-
-	useEffect(() => {
-		bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-	}, [activeChat, chatMessages]);
 
 	useEffect(() => {
 		const interval = window.setInterval(() => {
@@ -464,10 +470,9 @@ export default function FriendsPage() {
 
 	const friendCount = friends.filter((friend) => friend.isFriend).length;
 	const onlineCount = friends.filter((friend) => friend.isOnline).length;
-	const averageMatch = Math.round(
-		friends.reduce((total, friend) => total + friend.tasteMatch, 0) /
-			friends.length,
-	);
+	const newRecommendations = recommendations.filter(
+		(recommendation) => recommendation.status === "new",
+	).length;
 
 	function toggleFriend(id: number): void {
 		setFriends((currentFriends) =>
@@ -500,34 +505,25 @@ export default function FriendsPage() {
 		setOpenMenu(null);
 	}
 
-	function openChat(friend: Friend): void {
-		setActiveChat(friend);
-		setChatOpen(true);
-		setOpenMenu(null);
+	function updateRecommendationStatus(
+		id: number,
+		status: Recommendation["status"],
+	): void {
+		setRecommendations((currentRecommendations) =>
+			currentRecommendations.map((recommendation) =>
+				recommendation.id === id
+					? { ...recommendation, status }
+					: recommendation,
+			),
+		);
 	}
 
-	function sendMessage(): void {
-		if (!activeChat || !draftMessage.trim()) return;
-
-		const newMessage: ChatMessage = {
-			id: Date.now(),
-			from: "me",
-			text: draftMessage.trim(),
-			time: new Intl.DateTimeFormat("en", {
-				hour: "2-digit",
-				minute: "2-digit",
-			}).format(new Date()),
-		};
-
-		setChatMessages((currentMessages) => ({
-			...currentMessages,
-			[activeChat.id]: [
-				...(currentMessages[activeChat.id] ?? []),
-				newMessage,
-			],
-		}));
-
-		setDraftMessage("");
+	function deleteRecommendation(id: number): void {
+		setRecommendations((currentRecommendations) =>
+			currentRecommendations.filter(
+				(recommendation) => recommendation.id !== id,
+			),
+		);
 	}
 
 	return (
@@ -553,8 +549,8 @@ export default function FriendsPage() {
 
 							<p className="mt-4 max-w-2xl text-sm leading-7 text-white/60 md:text-base">
 								See what your friends are watching, compare your
-								taste, open their public diaries and keep the
-								movie conversation going.
+								taste, open their public diaries and send movie
+								recommendations.
 							</p>
 						</div>
 
@@ -562,8 +558,8 @@ export default function FriendsPage() {
 							<HeroStat label="Friends" value={friendCount} />
 							<HeroStat label="Online" value={onlineCount} />
 							<HeroStat
-								label="Avg match"
-								value={`${averageMatch}%`}
+								label="New recs"
+								value={newRecommendations}
 							/>
 						</div>
 					</div>
@@ -612,7 +608,7 @@ export default function FriendsPage() {
 					</div>
 				</div>
 
-				<div className="grid gap-8 xl:grid-cols-[1fr_360px]">
+				<div className="grid gap-8 xl:grid-cols-[1fr_380px]">
 					<div>
 						{filteredFriends.length === 0 ? (
 							<div className="rounded-3xl border border-white/10 bg-white/[0.03] p-10 text-center">
@@ -645,12 +641,15 @@ export default function FriendsPage() {
 										onToggleMute={() =>
 											toggleMute(friend.id)
 										}
-										onOpenChat={() => openChat(friend)}
 										onOpenCompare={() =>
 											setSelectedCompare(friend)
 										}
 										onOpenDiary={() => {
 											setDiaryFriend(friend);
+											setOpenMenu(null);
+										}}
+										onOpenRecommend={() => {
+											setRecommendFriend(friend);
 											setOpenMenu(null);
 										}}
 									/>
@@ -660,6 +659,18 @@ export default function FriendsPage() {
 					</div>
 
 					<aside className="space-y-6">
+						<RecommendationInbox
+							recommendations={recommendations}
+							friends={friends}
+							onAccept={(id) =>
+								updateRecommendationStatus(id, "accepted")
+							}
+							onDismiss={(id) =>
+								updateRecommendationStatus(id, "dismissed")
+							}
+							onDelete={deleteRecommendation}
+						/>
+
 						<div className="rounded-3xl border border-white/10 bg-white/[0.035] p-5 shadow-2xl shadow-black/20 backdrop-blur-xl">
 							<div className="mb-5 flex items-center justify-between">
 								<div>
@@ -687,57 +698,9 @@ export default function FriendsPage() {
 								))}
 							</div>
 						</div>
-
-						<div className="rounded-3xl border border-accent/20 bg-accent/10 p-5">
-							<h2 className="text-lg font-black">
-								Find better matches
-							</h2>
-
-							<p className="mt-3 text-sm leading-7 text-white/65">
-								Use Discover to find people with similar taste.
-								The match score is based on shared titles,
-								genres and rating style.
-							</p>
-						</div>
 					</aside>
 				</div>
 			</section>
-
-			<button
-				type="button"
-				onClick={() => setChatOpen((current) => !current)}
-				className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-white shadow-2xl shadow-accent/30 transition hover:scale-105 hover:bg-accent-hover"
-				aria-label="Open messages"
-			>
-				<MessageCircle className="h-6 w-6" />
-
-				{friends.some((friend) => (friend.unreadCount ?? 0) > 0) && (
-					<span className="absolute -right-1 -top-1 flex h-6 min-w-6 items-center justify-center rounded-full border-2 border-black bg-white px-1 text-xs font-black text-accent">
-						{friends.reduce(
-							(total, friend) =>
-								total + (friend.unreadCount ?? 0),
-							0,
-						)}
-					</span>
-				)}
-			</button>
-
-			{chatOpen && (
-				<ChatPanel
-					friends={friends}
-					activeChat={activeChat}
-					messages={
-						activeChat ? (chatMessages[activeChat.id] ?? []) : []
-					}
-					draftMessage={draftMessage}
-					bottomRef={bottomRef}
-					onClose={() => setChatOpen(false)}
-					onBack={() => setActiveChat(null)}
-					onSelectFriend={setActiveChat}
-					onDraftChange={setDraftMessage}
-					onSend={sendMessage}
-				/>
-			)}
 
 			{selectedCompare && (
 				<CompareModal
@@ -751,6 +714,13 @@ export default function FriendsPage() {
 					friend={diaryFriend}
 					items={DIARY_ITEMS[diaryFriend.id] ?? []}
 					onClose={() => setDiaryFriend(null)}
+				/>
+			)}
+
+			{recommendFriend && (
+				<RecommendModal
+					friend={recommendFriend}
+					onClose={() => setRecommendFriend(null)}
 				/>
 			)}
 
@@ -794,9 +764,9 @@ function FriendCard({
 	onToggleFriend,
 	onRemoveFriend,
 	onToggleMute,
-	onOpenChat,
 	onOpenCompare,
 	onOpenDiary,
+	onOpenRecommend,
 }: {
 	friend: Friend;
 	index: number;
@@ -806,9 +776,9 @@ function FriendCard({
 	onToggleFriend: () => void;
 	onRemoveFriend: () => void;
 	onToggleMute: () => void;
-	onOpenChat: () => void;
 	onOpenCompare: () => void;
 	onOpenDiary: () => void;
+	onOpenRecommend: () => void;
 }) {
 	const menuOpen = openMenu === friend.id;
 
@@ -870,9 +840,9 @@ function FriendCard({
 									onClick={onOpenDiary}
 								/>
 								<MenuItem
-									icon={<MessageCircle className="h-4 w-4" />}
-									label="Send message"
-									onClick={onOpenChat}
+									icon={<Send className="h-4 w-4" />}
+									label="Recommend title"
+									onClick={onOpenRecommend}
 								/>
 								<MenuItem
 									icon={<Share2 className="h-4 w-4" />}
@@ -952,27 +922,36 @@ function FriendCard({
 					))}
 				</div>
 
-				<div className="flex gap-3">
+				<div className="flex items-center gap-3">
 					<button
 						type="button"
-						className="flex-1 rounded-full bg-accent px-4 py-3 text-sm font-bold text-white transition hover:bg-accent-hover"
+						className="min-w-[116px] shrink-0 rounded-full bg-accent px-5 py-3 text-sm font-bold leading-none text-white transition hover:bg-accent-hover"
 					>
 						Visit Profile
 					</button>
 
 					<button
 						type="button"
-						onClick={onOpenCompare}
-						className="flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-bold text-white transition hover:border-accent/50 hover:bg-accent/10"
+						onClick={onOpenRecommend}
+						className="flex min-w-[142px] shrink-0 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-bold leading-none text-white transition hover:border-accent/50 hover:bg-accent/10"
 					>
-						Compare
+						Recommend
+						<Send className="h-4 w-4" />
+					</button>
+
+					<button
+						type="button"
+						onClick={onOpenCompare}
+						className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white transition hover:border-accent/50 hover:bg-accent/10"
+						title="Compare taste"
+					>
 						<ArrowUpRight className="h-4 w-4" />
 					</button>
 
 					<button
 						type="button"
 						onClick={onToggleFriend}
-						className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition ${
+						className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition ${
 							friend.isFriend
 								? "border border-white/10 bg-white/[0.04] text-white/60 hover:border-accent/50 hover:bg-accent/10 hover:text-accent"
 								: "bg-white text-black hover:bg-white/85"
@@ -980,9 +959,9 @@ function FriendCard({
 						title={friend.isFriend ? "Remove friend" : "Add friend"}
 					>
 						{friend.isFriend ? (
-							<UserMinus className="h-5 w-5" />
+							<UserMinus className="h-4 w-4" />
 						) : (
-							<UserPlus className="h-5 w-5" />
+							<UserPlus className="h-4 w-4" />
 						)}
 					</button>
 				</div>
@@ -1104,6 +1083,154 @@ function ActivityItem({
 	);
 }
 
+function RecommendationInbox({
+	recommendations,
+	friends,
+	onAccept,
+	onDismiss,
+	onDelete,
+}: {
+	recommendations: Recommendation[];
+	friends: Friend[];
+	onAccept: (id: number) => void;
+	onDismiss: (id: number) => void;
+	onDelete: (id: number) => void;
+}) {
+	return (
+		<div className="rounded-3xl border border-white/10 bg-white/[0.035] p-5 shadow-2xl shadow-black/20 backdrop-blur-xl">
+			<div className="mb-5 flex items-center justify-between">
+				<div>
+					<h2 className="text-xl font-black">Recommendation inbox</h2>
+					<p className="mt-1 text-xs text-white/45">
+						Movies and shows friends sent you
+					</p>
+				</div>
+
+				<Inbox className="h-5 w-5 text-accent" />
+			</div>
+
+			<div className="space-y-3">
+				{recommendations.length === 0 ? (
+					<p className="rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-white/50">
+						No recommendations yet.
+					</p>
+				) : (
+					recommendations.map((recommendation) => {
+						const friend = friends.find(
+							(item) => item.id === recommendation.fromFriendId,
+						);
+
+						return (
+							<div
+								key={recommendation.id}
+								className={`rounded-2xl border p-4 transition hover:border-accent/50 ${
+									recommendation.status === "new"
+										? "border-accent/30 bg-accent/10"
+										: "border-white/10 bg-black/20"
+								}`}
+							>
+								<div className="flex items-start gap-3">
+									{friend ? (
+										<Avatar friend={friend} />
+									) : (
+										<div className="h-10 w-10 rounded-full bg-white/10" />
+									)}
+
+									<div className="min-w-0 flex-1">
+										<div className="flex items-start justify-between gap-3">
+											<div>
+												<p className="text-sm font-bold text-white">
+													{recommendation.fromName}{" "}
+													recommended
+												</p>
+
+												<p className="mt-1 line-clamp-1 text-base font-black">
+													{recommendation.title}
+												</p>
+											</div>
+
+											<button
+												type="button"
+												onClick={() =>
+													onDelete(recommendation.id)
+												}
+												className="text-white/35 transition hover:text-white"
+												aria-label="Delete recommendation"
+											>
+												<X className="h-4 w-4" />
+											</button>
+										</div>
+
+										<p className="mt-2 text-sm leading-6 text-white/60">
+											{recommendation.message}
+										</p>
+
+										<div className="mt-3 flex flex-wrap items-center gap-2">
+											<span className="rounded-full border border-white/10 bg-black/25 px-3 py-1 text-xs font-bold text-white/55">
+												{recommendation.type === "movie"
+													? "Movie"
+													: "TV Show"}
+											</span>
+
+											<span className="text-xs text-white/35">
+												{recommendation.time}
+											</span>
+										</div>
+
+										{recommendation.status === "new" ? (
+											<div className="mt-4 flex gap-2">
+												<button
+													type="button"
+													onClick={() =>
+														onAccept(
+															recommendation.id,
+														)
+													}
+													className="flex items-center gap-2 rounded-full bg-accent px-4 py-2 text-xs font-bold text-white transition hover:bg-accent-hover"
+												>
+													<Check className="h-3.5 w-3.5" />
+													Add to watchlist
+												</button>
+
+												<button
+													type="button"
+													onClick={() =>
+														onDismiss(
+															recommendation.id,
+														)
+													}
+													className="rounded-full border border-white/10 px-4 py-2 text-xs font-bold text-white/60 transition hover:bg-white/10 hover:text-white"
+												>
+													Dismiss
+												</button>
+											</div>
+										) : (
+											<div className="mt-4 flex items-center gap-2 text-xs font-bold text-white/45">
+												{recommendation.status ===
+												"accepted" ? (
+													<>
+														<ThumbsUp className="h-4 w-4 text-accent" />
+														Added to watchlist
+													</>
+												) : (
+													<>
+														<X className="h-4 w-4" />
+														Dismissed
+													</>
+												)}
+											</div>
+										)}
+									</div>
+								</div>
+							</div>
+						);
+					})
+				)}
+			</div>
+		</div>
+	);
+}
+
 function MenuItem({
 	icon,
 	label,
@@ -1128,188 +1255,6 @@ function MenuItem({
 			{icon}
 			{label}
 		</button>
-	);
-}
-
-function ChatPanel({
-	friends,
-	activeChat,
-	messages,
-	draftMessage,
-	bottomRef,
-	onClose,
-	onBack,
-	onSelectFriend,
-	onDraftChange,
-	onSend,
-}: {
-	friends: Friend[];
-	activeChat: Friend | null;
-	messages: ChatMessage[];
-	draftMessage: string;
-	bottomRef: React.RefObject<HTMLDivElement | null>;
-	onClose: () => void;
-	onBack: () => void;
-	onSelectFriend: (friend: Friend) => void;
-	onDraftChange: (value: string) => void;
-	onSend: () => void;
-}) {
-	return (
-		<div className="fixed bottom-24 right-5 z-40 flex h-[620px] w-[calc(100vw-40px)] max-w-[390px] flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#101014]/95 shadow-2xl shadow-black/50 backdrop-blur-xl">
-			<div className="flex items-center justify-between border-b border-white/10 px-4 py-4">
-				<div className="min-w-0">
-					<p className="font-black">
-						{activeChat ? activeChat.name : "Messages"}
-					</p>
-					<p className="mt-0.5 text-xs text-white/40">
-						{activeChat
-							? getOnlineLabel(activeChat)
-							: "Chat with your friends"}
-					</p>
-				</div>
-
-				<div className="flex items-center gap-2">
-					{activeChat && (
-						<button
-							type="button"
-							onClick={onBack}
-							className="rounded-full px-3 py-1.5 text-xs font-bold text-white/55 transition hover:bg-white/10 hover:text-white"
-						>
-							Back
-						</button>
-					)}
-
-					<button
-						type="button"
-						onClick={onClose}
-						className="flex h-9 w-9 items-center justify-center rounded-full text-white/45 transition hover:bg-white/10 hover:text-white"
-						aria-label="Close messages"
-					>
-						<X className="h-5 w-5" />
-					</button>
-				</div>
-			</div>
-
-			<div className="flex-1 overflow-y-auto p-3">
-				{!activeChat && (
-					<div className="space-y-2">
-						{friends
-							.filter((friend) => friend.isFriend)
-							.map((friend) => {
-								const unread = (friend.unreadCount ?? 0) > 0;
-
-								return (
-									<button
-										key={friend.id}
-										type="button"
-										onClick={() => onSelectFriend(friend)}
-										className="flex w-full gap-3 rounded-2xl p-3 text-left transition hover:bg-white/[0.06]"
-									>
-										<div className="relative">
-											<Avatar friend={friend} />
-
-											{unread && (
-												<span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-accent ring-2 ring-[#101014]" />
-											)}
-										</div>
-
-										<div className="min-w-0 flex-1">
-											<div className="flex items-center justify-between gap-3">
-												<p
-													className={`truncate text-sm ${
-														unread
-															? "font-black"
-															: "font-bold"
-													}`}
-												>
-													{friend.name}
-												</p>
-
-												<span className="shrink-0 text-xs text-white/35">
-													{friend.lastMessageTime}
-												</span>
-											</div>
-
-											<p
-												className={`mt-1 truncate text-xs ${
-													unread
-														? "font-semibold text-white"
-														: "text-white/45"
-												}`}
-											>
-												{friend.lastMessage ??
-													"No messages yet"}
-											</p>
-										</div>
-									</button>
-								);
-							})}
-					</div>
-				)}
-
-				{activeChat && (
-					<div className="space-y-3">
-						{messages.length === 0 && (
-							<p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-center text-sm text-white/45">
-								No messages yet.
-							</p>
-						)}
-
-						{messages.map((message) => (
-							<div key={message.id}>
-								{message.date && (
-									<p className="mb-3 text-center text-xs font-bold uppercase tracking-wide text-white/25">
-										{message.date}
-									</p>
-								)}
-
-								<div
-									className={`max-w-[78%] rounded-2xl px-4 py-2.5 text-sm leading-6 ${
-										message.from === "me"
-											? "ml-auto bg-accent text-white"
-											: "bg-white/[0.08] text-white/85"
-									}`}
-								>
-									{message.text}
-
-									<p className="mt-1 text-right text-[10px] text-white/55">
-										{message.time}
-									</p>
-								</div>
-							</div>
-						))}
-
-						<div ref={bottomRef} />
-					</div>
-				)}
-			</div>
-
-			{activeChat && (
-				<div className="flex gap-2 border-t border-white/10 p-3">
-					<input
-						value={draftMessage}
-						onChange={(event) => onDraftChange(event.target.value)}
-						onKeyDown={(event) => {
-							if (event.key === "Enter") {
-								onSend();
-							}
-						}}
-						className="h-11 flex-1 rounded-full border border-white/10 bg-black/30 px-4 text-sm outline-none transition placeholder:text-white/35 focus:border-accent/70"
-						placeholder="Type a message..."
-					/>
-
-					<button
-						type="button"
-						onClick={onSend}
-						className="flex h-11 w-11 items-center justify-center rounded-full bg-accent text-white transition hover:bg-accent-hover disabled:opacity-50"
-						disabled={!draftMessage.trim()}
-						aria-label="Send message"
-					>
-						<Send className="h-4 w-4" />
-					</button>
-				</div>
-			)}
-		</div>
 	);
 }
 
@@ -1444,8 +1389,290 @@ function DiaryModal({
 						{friend.name}’s diary is private
 					</p>
 					<p className="mt-2 text-sm text-white/45">
-						You can still compare taste and send messages.
+						You can still compare taste and send recommendations.
 					</p>
+				</div>
+			)}
+		</Modal>
+	);
+}
+
+function RecommendModal({
+	friend,
+	onClose,
+}: {
+	friend: Friend;
+	onClose: () => void;
+}) {
+	const [query, setQuery] = useState("");
+	const [message, setMessage] = useState("");
+	const [selectedTitle, setSelectedTitle] = useState<TmdbSuggestion | null>(
+		null,
+	);
+	const [suggestions, setSuggestions] = useState<TmdbSuggestion[]>([]);
+	const [loading, setLoading] = useState(false);
+	const [sent, setSent] = useState(false);
+
+	useEffect(() => {
+		if (query.trim().length < 2 || selectedTitle) {
+			setSuggestions([]);
+			return;
+		}
+
+		let active = true;
+
+		async function loadSuggestions(): Promise<void> {
+			try {
+				setLoading(true);
+
+				const params = new URLSearchParams({
+					query: query.trim(),
+					type: "all",
+					sort: "popular",
+					minRating: "0",
+					genres: "",
+					page: "1",
+				});
+
+				const response = await fetch(
+					`/api/tmdb/browse?${params.toString()}`,
+				);
+
+				if (!response.ok) {
+					throw new Error("Could not search titles.");
+				}
+
+				const data = (await response.json()) as TmdbSearchResponse;
+
+				if (!active) return;
+
+				setSuggestions(
+					(data.results ?? [])
+						.filter(
+							(item) =>
+								item.media_type === "movie" ||
+								item.media_type === "tv",
+						)
+						.slice(0, 6),
+				);
+			} catch (error) {
+				console.error(error);
+
+				if (active) {
+					setSuggestions([]);
+				}
+			} finally {
+				if (active) {
+					setLoading(false);
+				}
+			}
+		}
+
+		const timeout = window.setTimeout(() => {
+			void loadSuggestions();
+		}, 300);
+
+		return () => {
+			active = false;
+			window.clearTimeout(timeout);
+		};
+	}, [query, selectedTitle]);
+
+	function handleSelectSuggestion(item: TmdbSuggestion): void {
+		setSelectedTitle(item);
+		setQuery(getSuggestionTitle(item));
+		setSuggestions([]);
+	}
+
+	function handleClearSelected(): void {
+		setSelectedTitle(null);
+		setQuery("");
+		setSuggestions([]);
+	}
+
+	function handleSend(): void {
+		if (!selectedTitle) return;
+		setSent(true);
+	}
+
+	return (
+		<Modal onClose={onClose}>
+			<div className="flex items-center gap-4">
+				<Avatar friend={friend} size="large" />
+
+				<div>
+					<p className="text-sm font-bold uppercase tracking-wide text-accent">
+						Recommend a title
+					</p>
+					<h2 className="mt-1 text-2xl font-black">
+						Send to {friend.name}
+					</h2>
+				</div>
+			</div>
+
+			{sent && selectedTitle ? (
+				<div className="mt-8 rounded-3xl border border-accent/30 bg-accent/10 p-6 text-center">
+					<Check className="mx-auto mb-4 h-8 w-8 text-accent" />
+					<p className="text-xl font-black">Recommendation sent</p>
+					<p className="mt-2 text-sm leading-7 text-white/60">
+						{friend.name} will see{" "}
+						<span className="font-bold text-white">
+							{getSuggestionTitle(selectedTitle)}
+						</span>{" "}
+						in their recommendation inbox.
+					</p>
+
+					<button
+						type="button"
+						onClick={onClose}
+						className="mt-6 rounded-full bg-accent px-6 py-3 text-sm font-bold text-white transition hover:bg-accent-hover"
+					>
+						Done
+					</button>
+				</div>
+			) : (
+				<div className="mt-8 space-y-5">
+					<div className="relative">
+						<label className="text-xs font-bold uppercase tracking-wide text-white/40">
+							Movie or TV show
+						</label>
+
+						<div className="relative mt-2">
+							<Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35" />
+
+							<input
+								value={query}
+								onChange={(event) => {
+									setQuery(event.target.value);
+									setSelectedTitle(null);
+								}}
+								placeholder="Search for a real movie or TV show..."
+								className="h-14 w-full rounded-2xl border border-white/10 bg-white/[0.04] pl-11 pr-12 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-accent/70"
+							/>
+
+							{selectedTitle && (
+								<button
+									type="button"
+									onClick={handleClearSelected}
+									className="absolute right-4 top-1/2 -translate-y-1/2 text-white/35 transition hover:text-white"
+									aria-label="Clear selected title"
+								>
+									<X className="h-4 w-4" />
+								</button>
+							)}
+						</div>
+
+						{loading && !selectedTitle && (
+							<p className="mt-2 text-xs text-white/40">
+								Searching...
+							</p>
+						)}
+
+						{suggestions.length > 0 && !selectedTitle && (
+							<div className="absolute left-0 right-0 top-full z-50 mt-3 max-h-[360px] overflow-y-auto rounded-3xl border border-white/10 bg-[#101014] p-2 shadow-2xl">
+								{suggestions.map((item) => (
+									<button
+										key={`${getSuggestionType(item)}-${item.id}`}
+										type="button"
+										onClick={() =>
+											handleSelectSuggestion(item)
+										}
+										className="flex w-full items-center gap-3 rounded-2xl p-3 text-left transition hover:bg-white/[0.06]"
+									>
+										<img
+											src={getPosterUrl(item.poster_path)}
+											alt={getSuggestionTitle(item)}
+											className="h-16 w-11 shrink-0 rounded-lg object-cover"
+										/>
+
+										<div className="min-w-0 flex-1">
+											<p className="line-clamp-1 font-black text-white">
+												{getSuggestionTitle(item)}
+											</p>
+
+											<div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-white/45">
+												<span>
+													{getSuggestionType(item) ===
+													"movie"
+														? "Movie"
+														: "TV Show"}
+												</span>
+												<span>·</span>
+												<span>
+													{getSuggestionYear(item)}
+												</span>
+
+												{typeof item.vote_average ===
+													"number" && (
+													<>
+														<span>·</span>
+														<span>
+															★{" "}
+															{item.vote_average.toFixed(
+																1,
+															)}
+														</span>
+													</>
+												)}
+											</div>
+										</div>
+									</button>
+								))}
+							</div>
+						)}
+
+						{selectedTitle && (
+							<div className="mt-3 flex items-center gap-3 rounded-2xl border border-accent/30 bg-accent/10 p-3">
+								<img
+									src={getPosterUrl(
+										selectedTitle.poster_path,
+									)}
+									alt={getSuggestionTitle(selectedTitle)}
+									className="h-16 w-11 rounded-lg object-cover"
+								/>
+
+								<div className="min-w-0 flex-1">
+									<p className="line-clamp-1 font-black">
+										{getSuggestionTitle(selectedTitle)}
+									</p>
+
+									<p className="mt-1 text-xs text-white/50">
+										{getSuggestionType(selectedTitle) ===
+										"movie"
+											? "Movie"
+											: "TV Show"}{" "}
+										· {getSuggestionYear(selectedTitle)}
+									</p>
+								</div>
+
+								<Check className="h-5 w-5 text-accent" />
+							</div>
+						)}
+					</div>
+
+					<div>
+						<label className="text-xs font-bold uppercase tracking-wide text-white/40">
+							Short note
+						</label>
+
+						<textarea
+							value={message}
+							onChange={(event) => setMessage(event.target.value)}
+							placeholder="Why should they watch it?"
+							rows={4}
+							className="mt-2 w-full resize-none rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-sm leading-6 text-white outline-none transition placeholder:text-white/35 focus:border-accent/70"
+						/>
+					</div>
+
+					<button
+						type="button"
+						onClick={handleSend}
+						disabled={!selectedTitle}
+						className="flex w-full items-center justify-center gap-2 rounded-full bg-accent px-6 py-3 text-sm font-bold text-white transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+					>
+						<Send className="h-4 w-4" />
+						Send recommendation
+					</button>
 				</div>
 			)}
 		</Modal>
