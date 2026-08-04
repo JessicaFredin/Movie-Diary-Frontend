@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import {
 	createClient,
 	type SupabaseClient,
 	type User,
 } from "@supabase/supabase-js";
+
+export const dynamic = "force-dynamic";
 
 type DeleteAccountBody = {
 	confirmation?: string;
@@ -49,7 +52,7 @@ function userNeedsPassword(user: User): boolean {
 	return providers.includes("email");
 }
 
-async function deleteRows(
+async function deleteOptionalRows(
 	adminClient: SupabaseClient,
 	table: string,
 	column: string,
@@ -59,9 +62,22 @@ async function deleteRows(
 
 	if (error) {
 		console.warn(
-			`Could not delete from ${table}.${column}:`,
+			`Could not delete optional rows from ${table}.${column}:`,
 			error.message,
 		);
+	}
+}
+
+async function deleteRequiredRows(
+	adminClient: SupabaseClient,
+	table: string,
+	column: string,
+	userId: string,
+): Promise<void> {
+	const { error } = await adminClient.from(table).delete().eq(column, userId);
+
+	if (error) {
+		throw new Error(`Could not delete from ${table}: ${error.message}`);
 	}
 }
 
@@ -153,87 +169,185 @@ export async function POST(
 
 		const userId = user.id;
 
-		await deleteRows(
+		/*
+			Optional deletes.
+			These may fail if the table or column does not exist yet.
+			That should not block account deletion.
+		*/
+
+		await deleteOptionalRows(
 			adminClient,
 			"content_reports",
 			"reporter_user_id",
 			userId,
 		);
-		await deleteRows(
+
+		await deleteOptionalRows(
 			adminClient,
 			"content_reports",
 			"reported_user_id",
 			userId,
 		);
 
-		await deleteRows(adminClient, "comment_reports", "reporter_id", userId);
-		await deleteRows(
+		await deleteOptionalRows(
+			adminClient,
+			"comment_reports",
+			"reporter_id",
+			userId,
+		);
+
+		await deleteOptionalRows(
 			adminClient,
 			"media_comment_reports",
 			"reporter_id",
 			userId,
 		);
 
-		await deleteRows(
+		await deleteOptionalRows(
 			adminClient,
 			"comment_spoiler_views",
 			"user_id",
 			userId,
 		);
-		await deleteRows(
+
+		await deleteOptionalRows(
 			adminClient,
 			"media_comment_spoiler_views",
 			"user_id",
 			userId,
 		);
 
-		await deleteRows(adminClient, "comment_likes", "user_id", userId);
-		await deleteRows(adminClient, "media_comment_likes", "user_id", userId);
+		await deleteOptionalRows(
+			adminClient,
+			"comment_likes",
+			"user_id",
+			userId,
+		);
 
-		await deleteRows(adminClient, "media_comments", "user_id", userId);
-		await deleteRows(adminClient, "comments", "user_id", userId);
+		await deleteOptionalRows(
+			adminClient,
+			"media_comment_likes",
+			"user_id",
+			userId,
+		);
 
-		await deleteRows(
+		await deleteOptionalRows(
 			adminClient,
 			"diary_access_requests",
 			"owner_id",
 			userId,
 		);
-		await deleteRows(
+
+		await deleteOptionalRows(
 			adminClient,
 			"diary_access_requests",
 			"requester_id",
 			userId,
 		);
 
-		await deleteRows(adminClient, "friend_requests", "sender_id", userId);
-		await deleteRows(adminClient, "friend_requests", "receiver_id", userId);
-		await deleteRows(
+		await deleteOptionalRows(
+			adminClient,
+			"friend_requests",
+			"sender_id",
+			userId,
+		);
+
+		await deleteOptionalRows(
+			adminClient,
+			"friend_requests",
+			"receiver_id",
+			userId,
+		);
+
+		await deleteOptionalRows(
 			adminClient,
 			"friend_requests",
 			"requester_id",
 			userId,
 		);
-		await deleteRows(
+
+		await deleteOptionalRows(
 			adminClient,
 			"friend_requests",
 			"addressee_id",
 			userId,
 		);
 
-		await deleteRows(adminClient, "friendships", "user_id", userId);
-		await deleteRows(adminClient, "friendships", "friend_id", userId);
+		await deleteOptionalRows(
+			adminClient,
+			"notifications",
+			"user_id",
+			userId,
+		);
 
-		await deleteRows(adminClient, "notifications", "user_id", userId);
-		await deleteRows(adminClient, "notifications", "actor_id", userId);
+		await deleteOptionalRows(
+			adminClient,
+			"notifications",
+			"actor_id",
+			userId,
+		);
 
-		await deleteRows(adminClient, "watchlist_entries", "user_id", userId);
-		await deleteRows(adminClient, "user_ratings", "user_id", userId);
-		await deleteRows(adminClient, "diary_entries", "user_id", userId);
-		await deleteRows(adminClient, "media_notes", "user_id", userId);
-		await deleteRows(adminClient, "tv_episode_notes", "user_id", userId);
-		await deleteRows(adminClient, "user_settings", "user_id", userId);
-		await deleteRows(adminClient, "profiles", "id", userId);
+		/*
+			Required deletes.
+			If these fail, account deletion should stop.
+		*/
+
+		await deleteRequiredRows(
+			adminClient,
+			"media_comments",
+			"user_id",
+			userId,
+		);
+
+		await deleteRequiredRows(adminClient, "comments", "user_id", userId);
+
+		await deleteRequiredRows(adminClient, "friendships", "user_id", userId);
+
+		await deleteRequiredRows(
+			adminClient,
+			"friendships",
+			"friend_id",
+			userId,
+		);
+
+		await deleteRequiredRows(
+			adminClient,
+			"watchlist_entries",
+			"user_id",
+			userId,
+		);
+
+		await deleteRequiredRows(
+			adminClient,
+			"user_ratings",
+			"user_id",
+			userId,
+		);
+
+		await deleteRequiredRows(
+			adminClient,
+			"diary_entries",
+			"user_id",
+			userId,
+		);
+
+		await deleteRequiredRows(adminClient, "media_notes", "user_id", userId);
+
+		await deleteRequiredRows(
+			adminClient,
+			"tv_episode_notes",
+			"user_id",
+			userId,
+		);
+
+		await deleteOptionalRows(
+			adminClient,
+			"user_settings",
+			"user_id",
+			userId,
+		);
+
+		await deleteRequiredRows(adminClient, "profiles", "id", userId);
 
 		const { error: deleteUserError } =
 			await adminClient.auth.admin.deleteUser(userId);
