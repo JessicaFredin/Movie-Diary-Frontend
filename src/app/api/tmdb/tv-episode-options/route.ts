@@ -25,11 +25,9 @@ function getTmdbAuth(): {
 	accessToken: string | null;
 	apiKey: string | null;
 } {
-	const rawApiKey =
-		process.env.TMDB_API_KEY ??
-		process.env.NEXT_PUBLIC_TMDB_API_KEY ??
-		null;
+	
 
+	const rawApiKey = process.env.TMDB_API_KEY ?? null;
 	const accessToken =
 		process.env.TMDB_ACCESS_TOKEN ??
 		process.env.TMDB_READ_ACCESS_TOKEN ??
