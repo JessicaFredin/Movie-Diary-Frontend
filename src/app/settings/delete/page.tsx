@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, AlertTriangle, Trash2 } from "lucide-react";
+import { ArrowLeft, AlertTriangle, Trash2, CheckCircle2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -24,6 +24,7 @@ export default function DeleteAccount() {
 	const [password, setPassword] = useState("");
 	const [deleting, setDeleting] = useState(false);
 	const [message, setMessage] = useState("");
+	const [successMessage, setSuccessMessage] = useState("");
 
 	const [authProvider, setAuthProvider] = useState<AuthProviderState>({
 		loading: true,
@@ -51,15 +52,18 @@ export default function DeleteAccount() {
 
 			const hasEmailProvider = providers.includes("email");
 			const hasGoogleProvider = providers.includes("google");
+			const hasFacebookProvider = providers.includes("facebook");
 
 			setAuthProvider({
 				loading: false,
 				requiresPassword: hasEmailProvider,
 				providerLabel: hasGoogleProvider
 					? "your Google account"
-					: hasEmailProvider
-						? "your email account"
-						: "your account",
+					: hasFacebookProvider
+						? "your Facebook account"
+						: hasEmailProvider
+							? "your email account"
+							: "your account",
 			});
 		}
 
@@ -68,6 +72,7 @@ export default function DeleteAccount() {
 
 	async function handleDelete(): Promise<void> {
 		setMessage("");
+		setSuccessMessage("");
 
 		if (confirmation !== "DELETE") {
 			setMessage("Type DELETE to confirm.");
@@ -105,13 +110,29 @@ export default function DeleteAccount() {
 
 			const result = (await response.json()) as DeleteAccountResponse;
 
-			if (!response.ok) {
+			if (!response.ok || !result.success) {
 				setMessage(result.error ?? "Could not delete account.");
 				return;
 			}
 
+			setSuccessMessage(
+				"Your account has been deleted successfully. Redirecting...",
+			);
+
 			await supabase.auth.signOut();
-			router.replace("/signup");
+
+			window.setTimeout(() => {
+				router.replace("/signup");
+				router.refresh();
+			}, 1400);
+		} catch (error) {
+			console.error("Delete account error:", error);
+
+			setMessage(
+				error instanceof Error
+					? error.message
+					: "Could not delete account.",
+			);
 		} finally {
 			setDeleting(false);
 		}
@@ -125,6 +146,7 @@ export default function DeleteAccount() {
 					onClick={() => router.back()}
 					className="text-muted transition hover:text-white"
 					aria-label="Go back"
+					disabled={deleting}
 				>
 					<ArrowLeft size={20} />
 				</button>
@@ -164,7 +186,8 @@ export default function DeleteAccount() {
 					value={confirmation}
 					onChange={(event) => setConfirmation(event.target.value)}
 					placeholder="Type DELETE"
-					className="w-full rounded-xl border border-border bg-surface-muted px-4 py-3 outline-none focus:border-accent"
+					disabled={deleting || Boolean(successMessage)}
+					className="w-full rounded-xl border border-border bg-surface-muted px-4 py-3 outline-none focus:border-accent disabled:cursor-not-allowed disabled:opacity-60"
 				/>
 
 				{authProvider.loading ? (
@@ -177,7 +200,8 @@ export default function DeleteAccount() {
 						value={password}
 						onChange={(event) => setPassword(event.target.value)}
 						placeholder="Enter your password"
-						className="w-full rounded-xl border border-border bg-surface-muted px-4 py-3 outline-none focus:border-accent"
+						disabled={deleting || Boolean(successMessage)}
+						className="w-full rounded-xl border border-border bg-surface-muted px-4 py-3 outline-none focus:border-accent disabled:cursor-not-allowed disabled:opacity-60"
 					/>
 				) : (
 					<div className="rounded-xl border border-border bg-surface-muted px-4 py-3 text-sm text-muted">
@@ -192,10 +216,21 @@ export default function DeleteAccount() {
 					</p>
 				)}
 
+				{successMessage && (
+					<div className="flex items-center gap-3 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-300">
+						<CheckCircle2 size={16} />
+						<p>{successMessage}</p>
+					</div>
+				)}
+
 				<button
 					type="button"
 					onClick={handleDelete}
-					disabled={deleting || authProvider.loading}
+					disabled={
+						deleting ||
+						authProvider.loading ||
+						Boolean(successMessage)
+					}
 					className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent py-4 font-semibold disabled:opacity-50"
 				>
 					<Trash2 size={16} />
