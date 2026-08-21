@@ -13,7 +13,14 @@ export async function GET(request: NextRequest) {
 		process.env.SUPABASE_SERVICE_ROLE_KEY!,
 	);
 
-	const { error } = await supabase.from("profiles").select("id").limit(1);
+    
+    const queries = await Promise.all([
+		supabase.from("profiles").select("id").limit(1),
+		supabase.from("profiles").select("id").limit(1),
+		supabase.from("profiles").select("id").limit(1),
+	]);
+
+	const error = queries.find((result) => result.error)?.error;
 
 	if (error) {
 		console.error("Supabase keep-alive failed:", error);
